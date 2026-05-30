@@ -371,7 +371,7 @@
 <!-- ══════════ MENU ══════════ -->
 <div id="screen-menu" class="screen">
   <h1>飛鳥123 練習</h1>
-  <p class="subtitle">PCキーボード必須　／　左親指シフト: <b>左Alt</b>　／　右親指シフト: <b>Space</b></p>
+  <p class="subtitle">PCキーボード必須　／　左親指シフト: <b>無変換</b>　／　右親指シフト: <b>変換</b></p>
 
   <div class="size-row">
     問題数:
@@ -398,8 +398,8 @@
   </div>
 
   <div class="thumb-row">
-    <div class="thumb-ind" id="ind-l">左Alt ← 左親指</div>
-    <div class="thumb-ind" id="ind-r">右親指 → Space</div>
+    <div class="thumb-ind" id="ind-l">無変換 ← 左親指</div>
+    <div class="thumb-ind" id="ind-r">右親指 → 変換</div>
   </div>
 
   <div id="keyboard"></div>
@@ -576,15 +576,15 @@ function buildKeyboard() {
 
   const altK = document.createElement('div');
   altK.className = 'kb-key k-thumb';
-  altK.dataset.code = 'AltLeft';
-  altK.innerHTML = '左Alt<small>左親指</small>';
-  KEL['AltLeft'] = altK;
+  altK.dataset.code = 'NonConvert';
+  altK.innerHTML = '無変換<small>左親指</small>';
+  KEL['NonConvert'] = altK;
 
   const spc = document.createElement('div');
   spc.className = 'kb-key k-space';
-  spc.dataset.code = 'Space';
-  spc.textContent = 'SPACE　右親指';
-  KEL['Space'] = spc;
+  spc.dataset.code = 'Convert';
+  spc.textContent = '変換　右親指';
+  KEL['Convert'] = spc;
 
   tr.appendChild(altK);
   tr.appendChild(spc);
@@ -598,12 +598,12 @@ function renderKB() {
   }
 
   // Held thumb keys
-  if (S.heldKeys.has('AltLeft')) KEL['AltLeft']?.classList.add('hl-left');
-  if (S.heldKeys.has('Space'))   KEL['Space']?.classList.add('hl-right');
+  if (S.heldKeys.has('NonConvert')) KEL['NonConvert']?.classList.add('hl-left');
+  if (S.heldKeys.has('Convert'))    KEL['Convert']?.classList.add('hl-right');
 
   // Thumb indicators
-  document.getElementById('ind-l').classList.toggle('lit-left',  S.heldKeys.has('AltLeft'));
-  document.getElementById('ind-r').classList.toggle('lit-right', S.heldKeys.has('Space'));
+  document.getElementById('ind-l').classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
+  document.getElementById('ind-r').classList.toggle('lit-right', S.heldKeys.has('Convert'));
 
   if (!S.tgtKey) return;
 
@@ -615,10 +615,10 @@ function renderKB() {
 
   // Also highlight required thumb indicator
   if (S.tgtKey.s === 'l') {
-    KEL['AltLeft']?.classList.add('hl-left');
+    KEL['NonConvert']?.classList.add('hl-left');
     document.getElementById('ind-l').classList.add('lit-left', 'req');
   } else if (S.tgtKey.s === 'r') {
-    KEL['Space']?.classList.add('hl-right');
+    KEL['Convert']?.classList.add('hl-right');
     document.getElementById('ind-r').classList.add('lit-right', 'req');
   }
 }
@@ -696,8 +696,8 @@ function updateHint() {
   if (!S.showHint || !S.tgtKey) { el.innerHTML = ''; return; }
   const lbl = PHYS[S.tgtKey.code] || S.tgtKey.code;
   let html = '';
-  if (S.tgtKey.s === 'l')      html = `<span class="hk">左Alt</span> ＋ <span class="hk">${lbl}</span>`;
-  else if (S.tgtKey.s === 'r') html = `<span class="hk">Space</span> ＋ <span class="hk">${lbl}</span>`;
+  if (S.tgtKey.s === 'l')      html = `<span class="hk">無変換</span> ＋ <span class="hk">${lbl}</span>`;
+  else if (S.tgtKey.s === 'r') html = `<span class="hk">変換</span> ＋ <span class="hk">${lbl}</span>`;
   else                         html = `<span class="hk">${lbl}</span>`;
   el.innerHTML = html;
 }
@@ -777,9 +777,6 @@ function clearPending() {
 }
 
 function onKeyDown(e) {
-  // Always block space scroll
-  if (e.code === 'Space') e.preventDefault();
-
   if (S.screen !== 'practice') return;
   if (e.repeat) return;
 
@@ -792,14 +789,14 @@ function onKeyDown(e) {
   const now  = performance.now();
 
   // ── Thumb keys ────────────────────────────────────────
-  if (code === 'AltLeft' || code === 'Space') {
+  if (code === 'NonConvert' || code === 'Convert') {
     e.preventDefault();
     S.heldKeys.add(code);
 
     if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
       // Finger came first → shift combo now confirmed
       clearTimeout(S.pendingChar.tid);
-      const shift = code === 'Space' ? 'r' : 'l';
+      const shift = code === 'Convert' ? 'r' : 'l';
       evaluate(S.pendingChar.code, shift);
       S.pendingChar = null;
     } else {
@@ -822,12 +819,12 @@ function onKeyDown(e) {
   }
 
   // Thumb already held
-  if (S.heldKeys.has('Space'))   { evaluate(code, 'r'); return; }
-  if (S.heldKeys.has('AltLeft')) { evaluate(code, 'l'); return; }
+  if (S.heldKeys.has('Convert'))    { evaluate(code, 'r'); return; }
+  if (S.heldKeys.has('NonConvert')) { evaluate(code, 'l'); return; }
 
   // Thumb was pending (thumb came first within window)
   if (S.pendingThumb && (now - S.pendingThumb.time) <= WINDOW_MS) {
-    const shift = S.pendingThumb.code === 'Space' ? 'r' : 'l';
+    const shift = S.pendingThumb.code === 'Convert' ? 'r' : 'l';
     evaluate(code, shift);
     S.pendingThumb = null;
     return;
@@ -845,7 +842,7 @@ function onKeyDown(e) {
 
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
-  if (e.code === 'AltLeft' || e.code === 'Space') {
+  if (e.code === 'NonConvert' || e.code === 'Convert') {
     e.preventDefault();
     S.pendingThumb = null;
     if (S.screen === 'practice') renderKB();
