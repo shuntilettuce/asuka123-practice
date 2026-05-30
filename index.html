@@ -44,7 +44,7 @@
     .subtitle {
       color: var(--text-dim);
       font-size: 0.82rem;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       text-align: center;
     }
 
@@ -55,7 +55,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       font-size: 0.88rem;
       color: var(--text-dim);
     }
@@ -76,17 +76,28 @@
       font-weight: bold;
     }
 
+    .menu-section { margin-bottom: 18px; }
+    .menu-sec-hd {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--key-border);
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
     .lesson-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 8px;
     }
 
     .lesson-btn {
       background: var(--surface);
       border: 1px solid var(--key-border);
       color: var(--text);
-      padding: 14px 16px;
+      padding: 13px 15px;
       border-radius: 8px;
       cursor: pointer;
       text-align: left;
@@ -95,8 +106,40 @@
       transition: background 0.12s, border-color 0.12s;
     }
     .lesson-btn:hover { background: var(--surface2); border-color: var(--purple); }
+    .lesson-btn.primary { border-color: var(--purple); }
     .lesson-num { color: var(--purple); font-weight: bold; font-size: 1.05rem; margin-right: 8px; }
-    .lesson-best { font-size: 0.73rem; color: var(--text-dim); margin-top: 5px; }
+    .lesson-best { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
+    .text-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .text-btn {
+      background: var(--surface);
+      border: 1px solid var(--key-border);
+      color: var(--text);
+      padding: 11px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      font-size: 0.88rem;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .text-btn:hover { background: var(--surface2); border-color: var(--blue); }
+    .text-preview {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .text-len {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
 
     /* ── Practice ── */
     .prac-header {
@@ -112,7 +155,7 @@
       height: 3px;
       background: var(--key-bg);
       border-radius: 2px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       overflow: hidden;
     }
     .progress-bar-fill {
@@ -122,6 +165,29 @@
       transition: width 0.25s;
     }
 
+    /* Text context (文章練習用) */
+    .text-ctx-box {
+      background: var(--surface);
+      border: 1px solid var(--key-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 1.25rem;
+      line-height: 2;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+    .tc-done { color: var(--text-dim); }
+    .tc-cur  {
+      color: var(--yellow);
+      font-weight: bold;
+      background: #2d2b15;
+      border-radius: 3px;
+      padding: 0 2px;
+      outline: 2px solid var(--yellow);
+      outline-offset: 1px;
+    }
+    .tc-todo { color: var(--text); }
+
     .challenge-box {
       background: var(--surface);
       border: 2px solid var(--key-border);
@@ -129,7 +195,7 @@
       padding: 20px;
       text-align: center;
       margin-bottom: 12px;
-      min-height: 120px;
+      min-height: 110px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -203,80 +269,51 @@
       transition: background 0.08s, border-color 0.08s;
       flex-shrink: 0;
     }
-
-    /* Physical key letter — top-right corner */
     .kb-phys {
       position: absolute;
-      top: 2px;
-      right: 3px;
+      top: 2px; right: 3px;
       font-size: 0.48rem;
       color: #555;
       font-family: monospace;
-      line-height: 1;
     }
-
-    /* Left-shift kana — top-left */
     .kb-l {
       position: absolute;
-      top: 3px;
-      left: 4px;
+      top: 3px; left: 4px;
       font-size: 0.62rem;
       color: var(--orange);
       line-height: 1;
     }
-
-    /* Normal kana — center */
-    .kb-n {
-      font-size: 1.05rem;
-      color: var(--text);
-      line-height: 1;
-    }
-
-    /* Right-shift kana — bottom-right */
+    .kb-n { font-size: 1.05rem; color: var(--text); line-height: 1; }
     .kb-r {
       position: absolute;
-      bottom: 3px;
-      right: 4px;
+      bottom: 3px; right: 4px;
       font-size: 0.62rem;
       color: var(--blue);
       line-height: 1;
     }
 
-    /* Target key */
-    .kb-key.tgt {
-      border-color: var(--yellow) !important;
-      background: #2d2b15 !important;
-    }
+    .kb-key.tgt { border-color: var(--yellow) !important; background: #2d2b15 !important; }
     .kb-key.tgt.m-n .kb-n { color: var(--yellow); font-size: 1.2rem; }
     .kb-key.tgt.m-l .kb-l { color: var(--yellow); font-size: 0.75rem; font-weight: bold; }
     .kb-key.tgt.m-r .kb-r { color: var(--yellow); font-size: 0.75rem; font-weight: bold; }
 
-    /* Thumb held */
     .kb-key.hl-left  { background: #301800 !important; border-color: var(--orange) !important; }
     .kb-key.hl-right { background: #001e2e !important; border-color: var(--blue)   !important; }
 
-    /* Flash */
     .kb-key.fl-ok  { background: #0f3020 !important; border-color: var(--green) !important; }
     .kb-key.fl-err { background: #3a1010 !important; border-color: var(--red)   !important; }
 
-    /* Thumb / wide keys */
     .kb-key.k-thumb {
-      width: 76px;
-      height: 38px;
-      font-size: 0.72rem;
-      color: var(--text-dim);
-      flex-direction: column;
-      gap: 1px;
+      width: 76px; height: 38px;
+      font-size: 0.72rem; color: var(--text-dim);
+      flex-direction: column; gap: 1px;
     }
     .kb-key.k-thumb small { font-size: 0.6rem; color: #555; }
-    .kb-key.k-space {
-      width: 220px;
-      height: 38px;
-      font-size: 0.75rem;
-      color: var(--text-dim);
+    .kb-key.k-conv {
+      width: 220px; height: 38px;
+      font-size: 0.75rem; color: var(--text-dim);
     }
 
-    /* Session stats row */
     .sess-stats {
       display: flex;
       justify-content: center;
@@ -287,7 +324,6 @@
     }
     .sess-stats b { color: var(--text); }
 
-    /* Controls */
     .ctrl-row {
       display: flex;
       justify-content: center;
@@ -319,24 +355,11 @@
       margin-bottom: 18px;
     }
     .result-card h2 { font-size: 1.4rem; color: var(--purple); margin-bottom: 22px; }
-
-    .big-nums {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin-bottom: 18px;
-    }
+    .big-nums { display: flex; justify-content: center; gap: 40px; margin-bottom: 18px; }
     .big-num-val { font-size: 2.8rem; font-weight: bold; color: var(--yellow); }
     .big-num-lbl { font-size: 0.8rem; color: var(--text-dim); }
-
     .result-sub { font-size: 0.88rem; color: var(--text-dim); margin-bottom: 16px; }
-
-    .err-box {
-      background: var(--key-bg);
-      border-radius: 8px;
-      padding: 14px 16px;
-      text-align: left;
-    }
+    .err-box { background: var(--key-bg); border-radius: 8px; padding: 14px 16px; text-align: left; }
     .err-box h3 { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px; }
     .err-chip {
       display: inline-flex;
@@ -350,7 +373,6 @@
     }
     .err-cnt { color: var(--red); font-size: 0.78rem; }
 
-    /* IME warning banner */
     #ime-warn {
       display: none;
       position: fixed;
@@ -374,14 +396,22 @@
   <p class="subtitle">PCキーボード必須　／　左親指シフト: <b>無変換</b>　／　右親指シフト: <b>変換</b></p>
 
   <div class="size-row">
-    問題数:
+    問題数（ランダム練習）:
     <button onclick="setSize(10)">10</button>
     <button onclick="setSize(20)">20</button>
     <button onclick="setSize(30)">30</button>
     <button onclick="setSize(50)">50</button>
   </div>
 
-  <div class="lesson-grid" id="lesson-grid"></div>
+  <div class="menu-section">
+    <div class="menu-sec-hd">ランダム練習</div>
+    <div class="lesson-grid" id="lesson-grid"></div>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-sec-hd">文章練習</div>
+    <div class="text-grid" id="text-grid"></div>
+  </div>
 </div>
 
 <!-- ══════════ PRACTICE ══════════ -->
@@ -391,6 +421,8 @@
     <span class="prac-progress" id="prac-prog"></span>
   </div>
   <div class="progress-bar-bg"><div class="progress-bar-fill" id="pbar"></div></div>
+
+  <div class="text-ctx-box" id="text-ctx" style="display:none"></div>
 
   <div class="challenge-box" id="cbox">
     <div class="target-kana" id="tgt-kana">　</div>
@@ -471,7 +503,6 @@ const LAYOUT = {
   Slash:  { n:'め', l:'？', r:'ぼ' },
 };
 
-// Physical key label for display
 const PHYS = {
   KeyQ:'Q', KeyW:'W', KeyE:'E', KeyR:'R', KeyT:'T',
   KeyY:'Y', KeyU:'U', KeyI:'I', KeyO:'O', KeyP:'P', BracketLeft:'[',
@@ -481,7 +512,6 @@ const PHYS = {
   KeyN:'N', KeyM:'M', Comma:',', Period:'.', Slash:'/',
 };
 
-// Reverse map: kana → { code, shift ('n'|'l'|'r') }
 const KANA_MAP = {};
 for (const [code, e] of Object.entries(LAYOUT)) {
   for (const s of ['n','l','r']) {
@@ -489,39 +519,62 @@ for (const [code, e] of Object.entries(LAYOUT)) {
   }
 }
 
-// Kana characters suitable for practice (hiragana/katakana + ー)
 const isKana = c => {
   if (!c) return false;
   const cp = c.codePointAt(0);
-  return (cp >= 0x3041 && cp <= 0x3096) || // hiragana
-         (cp >= 0x30A1 && cp <= 0x30FA) || // katakana letters
-         cp === 0x30FC;                     // ー
+  return (cp >= 0x3041 && cp <= 0x3096) ||
+         (cp >= 0x30A1 && cp <= 0x30FA) ||
+         cp === 0x30FC;
 };
 
-// ── Lessons ───────────────────────────────────────────────────────────────────
+// ── Lessons（全シフト優先） ───────────────────────────────────────────────────
 const HOME_N = ['き','し','う','て','ぎ','ゆ','ん','い','か','た'];
-const TOP_N  = ['じ','と','は','ぽ','ー','ぴ'];
+const HOME_L = ['だ','ち','あ','り','ぉ','ず','る','す','ま','で'];
+const HOME_R = ['わ','お','な','ら','づ','ぬ','く','の','つ','さ'];
 
 const allN = [...new Set(Object.values(LAYOUT).map(e=>e.n).filter(isKana))];
 const allL = [...new Set(Object.values(LAYOUT).map(e=>e.l).filter(isKana))];
 const allR = [...new Set(Object.values(LAYOUT).map(e=>e.r).filter(isKana))];
 
-const HOME_L = ['だ','ち','あ','り','ぉ','ず','る','す','ま','で'];
-const HOME_R = ['わ','お','な','ら','づ','ぬ','く','の','つ','さ'];
-
 const LESSONS = [
-  { title:'ホーム段・通常',         chars: HOME_N },
-  { title:'ホーム段＋上段・通常',   chars: [...HOME_N, ...TOP_N] },
-  { title:'全キー・通常',           chars: allN },
-  { title:'全通常＋左シフト（ホーム）', chars: [...HOME_N, ...HOME_L] },
-  { title:'全通常＋右シフト（ホーム）', chars: [...HOME_N, ...HOME_R] },
-  { title:'全キー・全シフト',       chars: [...allN, ...allL, ...allR] },
+  // 全シフト（メイン）
+  { title:'ホーム段（全シフト）', chars:[...HOME_N,...HOME_L,...HOME_R], primary:true },
+  { title:'全キー（全シフト）',   chars:[...allN,...allL,...allR],       primary:true },
+  // 通常のみ（補助）
+  { title:'ホーム段（通常のみ）', chars: HOME_N, primary:false },
+  { title:'全キー（通常のみ）',   chars: allN,   primary:false },
 ];
 
-// ── Application state ─────────────────────────────────────────────────────────
+// ── 文章練習テキスト ──────────────────────────────────────────────────────────
+const TEXTS = [
+  { title:'あいさつ①',
+    text: 'こんにちはおげんきですか' },
+  { title:'あいさつ②',
+    text: 'おはようございますきょうもよろしくおねがいします' },
+  { title:'ありがとう',
+    text: 'ありがとうございますたいへんたすかりました' },
+  { title:'じこしょうかい',
+    text: 'わたしはにほんごをまいにちれんしゅうしています' },
+  { title:'まいにちのせいかつ',
+    text: 'まいあさはやくおきてかおをあらいごはんをたべます' },
+  { title:'きせつ',
+    text: 'はるになるとさくらがさいてとてもきれいです' },
+  { title:'にほんごのれんしゅう',
+    text: 'まいにちれんしゅうするとだんだんはやくなりますがんばりましょう' },
+  { title:'むかしばなし',
+    text: 'むかしむかしあるところにおじいさんとおばあさんがすんでいました' },
+  { title:'たべもの',
+    text: 'すしやてんぷらやそばなどのにほんりょうりはとてもおいしいです' },
+  { title:'きもち',
+    text: 'きれいなはなをみてとてもきもちがよくなりましたありがとうございます' },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   screen: 'menu',
+  mode: 'random',      // 'random' | 'text'
   lessonIdx: 0,
+  textIdx: 0,
   sessionSize: 20,
   showHint: true,
 
@@ -529,8 +582,8 @@ const S = {
   tgtKana: null, tgtKey: null,
 
   heldKeys: new Set(),
-  pendingChar:  null,  // { code, time, tid }
-  pendingThumb: null,  // { code, time }
+  pendingChar:  null,
+  pendingThumb: null,
 
   tStart: 0, firstKey: false, hadWrong: false,
   stats: { total:0, correct:0, msSum:0, errs:{}, t0:0 },
@@ -545,7 +598,7 @@ const KB_ROWS = [
   ['KeyZ','KeyX','KeyC','KeyV','KeyB','KeyN','KeyM','Comma','Period','Slash'],
 ];
 
-const KEL = {}; // code → DOM element
+const KEL = {};
 
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
@@ -570,56 +623,53 @@ function buildKeyboard() {
     kb.appendChild(div);
   }
 
-  // Thumb row
   const tr = document.createElement('div');
   tr.className = 'kb-row';
 
-  const altK = document.createElement('div');
-  altK.className = 'kb-key k-thumb';
-  altK.dataset.code = 'NonConvert';
-  altK.innerHTML = '無変換<small>左親指</small>';
-  KEL['NonConvert'] = altK;
+  const muhan = document.createElement('div');
+  muhan.className = 'kb-key k-thumb';
+  muhan.dataset.code = 'NonConvert';
+  muhan.innerHTML = '無変換<small>左親指</small>';
+  KEL['NonConvert'] = muhan;
 
-  const spc = document.createElement('div');
-  spc.className = 'kb-key k-space';
-  spc.dataset.code = 'Convert';
-  spc.textContent = '変換　右親指';
-  KEL['Convert'] = spc;
+  const henko = document.createElement('div');
+  henko.className = 'kb-key k-conv';
+  henko.dataset.code = 'Convert';
+  henko.textContent = '変換　右親指';
+  KEL['Convert'] = henko;
 
-  tr.appendChild(altK);
-  tr.appendChild(spc);
+  tr.appendChild(muhan);
+  tr.appendChild(henko);
   kb.appendChild(tr);
 }
 
 function renderKB() {
   const TGT_CLS = ['tgt','m-n','m-l','m-r','hl-left','hl-right'];
-  for (const el of Object.values(KEL)) {
-    el.classList.remove(...TGT_CLS);
-  }
+  for (const el of Object.values(KEL)) el.classList.remove(...TGT_CLS);
 
-  // Held thumb keys
   if (S.heldKeys.has('NonConvert')) KEL['NonConvert']?.classList.add('hl-left');
   if (S.heldKeys.has('Convert'))    KEL['Convert']?.classList.add('hl-right');
 
-  // Thumb indicators
-  document.getElementById('ind-l').classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
-  document.getElementById('ind-r').classList.toggle('lit-right', S.heldKeys.has('Convert'));
+  const indL = document.getElementById('ind-l');
+  const indR = document.getElementById('ind-r');
+  indL.classList.remove('lit-left','req');
+  indR.classList.remove('lit-right','req');
+  indL.classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
+  indR.classList.toggle('lit-right', S.heldKeys.has('Convert'));
 
   if (!S.tgtKey) return;
 
   const tgtEl = KEL[S.tgtKey.code];
   if (tgtEl) {
-    const modeClass = S.tgtKey.s === 'n' ? 'm-n' : S.tgtKey.s === 'l' ? 'm-l' : 'm-r';
-    tgtEl.classList.add('tgt', modeClass);
+    tgtEl.classList.add('tgt', S.tgtKey.s === 'n' ? 'm-n' : S.tgtKey.s === 'l' ? 'm-l' : 'm-r');
   }
 
-  // Also highlight required thumb indicator
   if (S.tgtKey.s === 'l') {
     KEL['NonConvert']?.classList.add('hl-left');
-    document.getElementById('ind-l').classList.add('lit-left', 'req');
+    indL.classList.add('lit-left', 'req');
   } else if (S.tgtKey.s === 'r') {
     KEL['Convert']?.classList.add('hl-right');
-    document.getElementById('ind-r').classList.add('lit-right', 'req');
+    indR.classList.add('lit-right', 'req');
   }
 }
 
@@ -653,25 +703,47 @@ function buildQueue(chars, size) {
   return q;
 }
 
-// ── Practice flow ─────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────────
 function startLesson(idx) {
   const lesson = LESSONS[idx];
+  S.mode = 'random';
   S.lessonIdx = idx;
-  S.screen = 'practice';
   S.queue = buildQueue(lesson.chars, S.sessionSize);
   S.pos = 0;
-  S.showHint = idx < 3;
+  S.showHint = lesson.primary; // hint ON for full-shift lessons
   S.heldKeys.clear();
   clearPending();
   S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
 
   document.getElementById('prac-title').textContent = `レッスン${idx+1}: ${lesson.title}`;
   document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
+  document.getElementById('text-ctx').style.display = 'none';
   showScreen('practice');
   if (document.activeElement) document.activeElement.blur();
   nextChallenge();
 }
 
+function startText(idx) {
+  const txt = TEXTS[idx];
+  S.mode = 'text';
+  S.textIdx = idx;
+  // Filter to only characters that exist in the layout
+  S.queue = [...txt.text].filter(c => KANA_MAP[c]);
+  S.pos = 0;
+  S.showHint = true;
+  S.heldKeys.clear();
+  clearPending();
+  S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
+
+  document.getElementById('prac-title').textContent = `文章練習: ${txt.title}`;
+  document.getElementById('hint-lbl').textContent = 'ON';
+  document.getElementById('text-ctx').style.display = '';
+  showScreen('practice');
+  if (document.activeElement) document.activeElement.blur();
+  nextChallenge();
+}
+
+// ── Practice flow ─────────────────────────────────────────────────────────────
 function nextChallenge() {
   if (S.pos >= S.queue.length) { endSession(); return; }
 
@@ -686,9 +758,35 @@ function nextChallenge() {
   document.getElementById('pbar').style.width = `${(S.pos / n) * 100}%`;
   document.getElementById('tgt-kana').textContent = S.tgtKana;
   document.getElementById('cbox').classList.remove('ok','err');
+
+  if (S.mode === 'text') updateTextCtx();
   updateHint();
   updateSessStats();
   renderKB();
+}
+
+function updateTextCtx() {
+  const el = document.getElementById('text-ctx');
+  const txt = TEXTS[S.textIdx].text;
+  // Build spans aligned to the filtered queue
+  const filtered = [...txt].filter(c => KANA_MAP[c]);
+  const pos = S.pos;
+
+  // Map filtered positions back into the original text for display
+  let fi = 0;
+  let html = '';
+  for (const c of txt) {
+    if (!KANA_MAP[c]) {
+      // Non-typed character (shouldn't exist in our pure-hiragana texts but handle it)
+      html += `<span class="tc-todo">${c}</span>`;
+      continue;
+    }
+    if (fi < pos)       html += `<span class="tc-done">${c}</span>`;
+    else if (fi === pos) html += `<span class="tc-cur">${c}</span>`;
+    else                html += `<span class="tc-todo">${c}</span>`;
+    fi++;
+  }
+  el.innerHTML = html;
 }
 
 function updateHint() {
@@ -729,11 +827,10 @@ function evaluate(code, shift) {
     if (!S.hadWrong) S.stats.correct++;
     else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
 
-    S.tgtKey = null; // block re-trigger during delay
+    S.tgtKey = null;
 
     flashKey(code, true);
-    const cbox = document.getElementById('cbox');
-    cbox.classList.add('ok');
+    document.getElementById('cbox').classList.add('ok');
     S.pos++;
     setTimeout(() => { if (S.screen === 'practice') nextChallenge(); }, 130);
   } else {
@@ -755,7 +852,7 @@ function endSession() {
   document.getElementById('r-cpm').textContent = cpm;
   document.getElementById('r-sub').textContent = `正解 ${correct} / ${total} 問`;
 
-  const errEntries = Object.entries(errs).sort((a,b) => b[1]-a[1]).slice(0,10);
+  const errEntries = Object.entries(errs).sort((a,b)=>b[1]-a[1]).slice(0,10);
   const erEl = document.getElementById('r-errs');
   if (!errEntries.length) {
     erEl.innerHTML = '<span style="color:var(--green)">ミスなし！完璧です</span>';
@@ -766,7 +863,8 @@ function endSession() {
       ).join('');
   }
 
-  saveProgress(S.lessonIdx, acc, cpm);
+  if (S.mode === 'random') saveProgress(`l${S.lessonIdx}`, acc, cpm);
+  else                     saveProgress(`t${S.textIdx}`,   acc, cpm);
   showScreen('stats');
 }
 
@@ -788,13 +886,11 @@ function onKeyDown(e) {
   const code = e.code;
   const now  = performance.now();
 
-  // ── Thumb keys ────────────────────────────────────────
   if (code === 'NonConvert' || code === 'Convert') {
     e.preventDefault();
     S.heldKeys.add(code);
 
     if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
-      // Finger came first → shift combo now confirmed
       clearTimeout(S.pendingChar.tid);
       const shift = code === 'Convert' ? 'r' : 'l';
       evaluate(S.pendingChar.code, shift);
@@ -807,22 +903,18 @@ function onKeyDown(e) {
     return;
   }
 
-  // ── Character keys ────────────────────────────────────
   if (!LAYOUT[code]) return;
   e.preventDefault();
 
-  // Flush any previous pending char as normal (two fingers pressed rapidly)
   if (S.pendingChar && S.pendingChar.code !== code) {
     clearTimeout(S.pendingChar.tid);
     evaluate(S.pendingChar.code, 'n');
     S.pendingChar = null;
   }
 
-  // Thumb already held
   if (S.heldKeys.has('Convert'))    { evaluate(code, 'r'); return; }
   if (S.heldKeys.has('NonConvert')) { evaluate(code, 'l'); return; }
 
-  // Thumb was pending (thumb came first within window)
   if (S.pendingThumb && (now - S.pendingThumb.time) <= WINDOW_MS) {
     const shift = S.pendingThumb.code === 'Convert' ? 'r' : 'l';
     evaluate(code, shift);
@@ -830,7 +922,6 @@ function onKeyDown(e) {
     return;
   }
 
-  // Finger first — wait for possible thumb within window
   const tid = setTimeout(() => {
     if (S.pendingChar && S.pendingChar.code === code) {
       evaluate(code, 'n');
@@ -849,21 +940,22 @@ function onKeyUp(e) {
   }
 }
 
-// ── Screen / UI helpers ───────────────────────────────────────────────────────
+// ── Screen / UI ───────────────────────────────────────────────────────────────
 function showScreen(name) {
   S.screen = name;
-  document.getElementById('screen-menu').style.display    = name==='menu'     ? '' : 'none';
+  document.getElementById('screen-menu').style.display     = name==='menu'     ? '' : 'none';
   document.getElementById('screen-practice').style.display = name==='practice' ? '' : 'none';
-  document.getElementById('screen-stats').style.display   = name==='stats'    ? '' : 'none';
+  document.getElementById('screen-stats').style.display    = name==='stats'    ? '' : 'none';
 }
 
 function renderMenu() {
+  // ── Random lessons ──
   const grid = document.getElementById('lesson-grid');
   grid.innerHTML = '';
   LESSONS.forEach((lesson, i) => {
-    const best = loadProgress(i);
+    const best = loadProgress(`l${i}`);
     const b = document.createElement('button');
-    b.className = 'lesson-btn';
+    b.className = 'lesson-btn' + (lesson.primary ? ' primary' : '');
     b.innerHTML =
       `<div><span class="lesson-num">${i+1}</span>${lesson.title}</div>` +
       `<div class="lesson-best">${best ? `ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})` : 'まだ未挑戦'}</div>`;
@@ -871,6 +963,23 @@ function renderMenu() {
     grid.appendChild(b);
   });
 
+  // ── Text practice ──
+  const tgrid = document.getElementById('text-grid');
+  tgrid.innerHTML = '';
+  TEXTS.forEach((txt, i) => {
+    const best = loadProgress(`t${i}`);
+    const b = document.createElement('button');
+    b.className = 'text-btn';
+    const preview = txt.text.slice(0, 12) + (txt.text.length > 12 ? '…' : '');
+    b.innerHTML =
+      `<div>${txt.title} <span class="text-len">(${txt.text.length}文字)</span></div>` +
+      `<div class="text-preview">${preview}</div>` +
+      `<div class="lesson-best">${best ? `ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})` : 'まだ未挑戦'}</div>`;
+    b.onclick = () => startText(i);
+    tgrid.appendChild(b);
+  });
+
+  // Size buttons
   document.querySelectorAll('.size-row button').forEach(b => {
     b.classList.toggle('active', parseInt(b.textContent) === S.sessionSize);
   });
@@ -885,7 +994,10 @@ function goMenu() {
   renderMenu();
 }
 
-function replayLesson() { startLesson(S.lessonIdx); }
+function replayLesson() {
+  if (S.mode === 'text') startText(S.textIdx);
+  else                   startLesson(S.lessonIdx);
+}
 
 function toggleHint() {
   S.showHint = !S.showHint;
@@ -894,19 +1006,19 @@ function toggleHint() {
 }
 
 // ── localStorage ──────────────────────────────────────────────────────────────
-function saveProgress(idx, acc, cpm) {
+function saveProgress(key, acc, cpm) {
   try {
-    const key = `a123_${idx}`;
-    const prev = JSON.parse(localStorage.getItem(key) || 'null');
+    const k = `a123_${key}`;
+    const prev = JSON.parse(localStorage.getItem(k) || 'null');
     if (!prev || acc > prev.acc || (acc === prev.acc && cpm > prev.cpm)) {
       const d = new Date().toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' });
-      localStorage.setItem(key, JSON.stringify({ acc, cpm, d }));
+      localStorage.setItem(k, JSON.stringify({ acc, cpm, d }));
     }
   } catch(_) {}
 }
 
-function loadProgress(idx) {
-  try { return JSON.parse(localStorage.getItem(`a123_${idx}`) || 'null'); }
+function loadProgress(key) {
+  try { return JSON.parse(localStorage.getItem(`a123_${key}`) || 'null'); }
   catch(_) { return null; }
 }
 
@@ -918,7 +1030,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup',   onKeyUp);
 
-  // Clear held state on tab blur
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       S.heldKeys.clear();
@@ -927,7 +1038,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Dismiss IME warning on any keypress
   document.addEventListener('keydown', () => {
     const w = document.getElementById('ime-warn');
     if (w.style.display !== 'none') w.style.display = 'none';
