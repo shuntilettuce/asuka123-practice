@@ -272,8 +272,8 @@
     .kb-phys {
       position: absolute;
       top: 2px; right: 3px;
-      font-size: 0.48rem;
-      color: #555;
+      font-size: 0.55rem;
+      color: #8888aa;
       font-family: monospace;
     }
     .kb-l {
@@ -308,10 +308,11 @@
       font-size: 0.72rem; color: var(--text-dim);
       flex-direction: column; gap: 1px;
     }
-    .kb-key.k-thumb small { font-size: 0.6rem; color: #555; }
-    .kb-key.k-conv {
-      width: 220px; height: 38px;
-      font-size: 0.75rem; color: var(--text-dim);
+    .kb-key.k-thumb small { font-size: 0.6rem; color: #8888aa; }
+    .kb-key.k-space {
+      width: 240px; height: 38px;
+      font-size: 0.72rem; color: #555;
+      pointer-events: none;
     }
 
     .sess-stats {
@@ -671,13 +672,18 @@ function buildKeyboard() {
   muhan.innerHTML = '無変換<small>左親指</small>';
   KEL['NonConvert'] = muhan;
 
+  const spaceKey = document.createElement('div');
+  spaceKey.className = 'kb-key k-space';
+  spaceKey.textContent = 'Space';
+
   const henko = document.createElement('div');
-  henko.className = 'kb-key k-conv';
+  henko.className = 'kb-key k-thumb';
   henko.dataset.code = 'Convert';
-  henko.textContent = '変換　右親指';
+  henko.innerHTML = '変換<small>右親指</small>';
   KEL['Convert'] = henko;
 
   tr.appendChild(muhan);
+  tr.appendChild(spaceKey);
   tr.appendChild(henko);
   kb.appendChild(tr);
 }
@@ -696,7 +702,7 @@ function renderKB() {
   indL.classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
   indR.classList.toggle('lit-right', S.heldKeys.has('Convert'));
 
-  if (!S.tgtKey) return;
+  if (!S.tgtKey || !S.showHint) return;
 
   const tgtEl = KEL[S.tgtKey.code];
   if (tgtEl) {
