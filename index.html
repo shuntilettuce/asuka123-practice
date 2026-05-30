@@ -410,6 +410,13 @@
 
   <div class="menu-section">
     <div class="menu-sec-hd">文章練習</div>
+    <div class="size-row" id="tsize-row">
+      文字数:
+      <button onclick="setTextSize(20)">20</button>
+      <button onclick="setTextSize(30)">30</button>
+      <button onclick="setTextSize(50)">50</button>
+      <button onclick="setTextSize(100)">100</button>
+    </div>
     <div class="text-grid" id="text-grid"></div>
   </div>
 </div>
@@ -465,6 +472,7 @@
 <script>
 'use strict';
 
+// ── Key layout (飛鳥123) ──────────────────────────────────────────────────────
 const LAYOUT = {
   KeyQ: { n:'「', l:'ぱ', r:'（' },
   KeyW: { n:'ー', l:'え', r:'べ' },
@@ -477,6 +485,7 @@ const LAYOUT = {
   KeyO: { n:'は', l:'ふ', r:'こ' },
   KeyP: { n:'ぽ', l:'！', r:'ぞ' },
   BracketLeft: { n:'」', l:'）', r:'ご' },
+
   KeyA: { n:'き', l:'だ', r:'わ' },
   KeyS: { n:'し', l:'ち', r:'お' },
   KeyD: { n:'う', l:'あ', r:'な' },
@@ -488,6 +497,7 @@ const LAYOUT = {
   KeyL: { n:'か', l:'ま', r:'つ' },
   Semicolon: { n:'た', l:'で', r:'さ' },
   Quote:     { n:'ほ', l:'げ', r:'ろ' },
+
   KeyZ: { n:'ば', l:'ぜ', r:'ぷ' },
   KeyX: { n:'け', l:'ひ', r:'ぐ' },
   KeyC: { n:'に', l:'せ', r:'み' },
@@ -524,6 +534,7 @@ const isKana = c => {
          cp === 0x30FC;
 };
 
+// ── Lessons（全シフト優先） ───────────────────────────────────────────────────
 const HOME_N = ['き','し','う','て','ぎ','ゆ','ん','い','か','た'];
 const HOME_L = ['だ','ち','あ','り','ぉ','ず','る','す','ま','で'];
 const HOME_R = ['わ','お','な','ら','づ','ぬ','く','の','つ','さ'];
@@ -539,30 +550,84 @@ const LESSONS = [
   { title:'全キー（通常のみ）',   chars: allN,   primary:false },
 ];
 
-const TEXTS = [
-  { title:'あいさつ①',     text: 'こんにちはおげんきですか' },
-  { title:'あいさつ②',     text: 'おはようございますきょうもよろしくおねがいします' },
-  { title:'ありがとう',     text: 'ありがとうございますたいへんたすかりました' },
-  { title:'じこしょうかい', text: 'わたしはにほんごをまいにちれんしゅうしています' },
-  { title:'まいにちのせいかつ', text: 'まいあさはやくおきてかおをあらいごはんをたべます' },
-  { title:'きせつ',         text: 'はるになるとさくらがさいてとてもきれいです' },
-  { title:'にほんごのれんしゅう', text: 'まいにちれんしゅうするとだんだんはやくなりますがんばりましょう' },
-  { title:'むかしばなし',   text: 'むかしむかしあるところにおじいさんとおばあさんがすんでいました' },
-  { title:'たべもの',       text: 'すしやてんぷらやそばなどのにほんりょうりはとてもおいしいです' },
-  { title:'きもち',         text: 'きれいなはなをみてとてもきもちがよくなりましたありがとうございます' },
+// ── 文章練習テキスト ──────────────────────────────────────────────────────────
+const TEXT_GROUPS = [
+  {
+    title: '中央段のみ',
+    desc:  'ホーム段キーだけで入力できる文章',
+    texts: [
+      { title:'なかまたくさん',   text:'わたしのなかまたくさんいる' },
+      { title:'きのうのきおく',   text:'たのしいきのうのきおくいつかかたりたい' },
+      { title:'ゆきのさくら',     text:'ゆきのなかうつくしいさくらある' },
+      { title:'おおきなちから',   text:'おおきなちからのあるなかまいつかなりたい' },
+      { title:'うつくしいきおく', text:'うつくしいたのしいわたしのきおく' },
+      { title:'ゆきのなか',       text:'たくさんのゆきのなかわたしたちたたずんだ' },
+      { title:'ゆきのいろ',       text:'きのうのゆきのいろのうつくしさかたりたい' },
+      { title:'わかりあう',       text:'わかりあうなかまのたのしさかたりたい' },
+    ]
+  },
+  {
+    title: '日常会話',
+    desc:  '日常でよく使う表現',
+    texts: [
+      { title:'あいさつ①',     text:'こんにちはおげんきですか' },
+      { title:'あいさつ②',     text:'おはようございますきょうもよろしくおねがいします' },
+      { title:'ありがとう',     text:'ありがとうございますたいへんたすかりました' },
+      { title:'じこしょうかい', text:'わたしはにほんごをまいにちれんしゅうしています' },
+      { title:'せいかつ',       text:'まいあさはやくおきてかおをあらいごはんをたべます' },
+      { title:'きせつ',         text:'はるになるとさくらがさいてとてもきれいです' },
+      { title:'れんしゅう',     text:'まいにちれんしゅうするとだんだんはやくなります' },
+      { title:'しょくじ',       text:'すしやてんぷらやそばなどのにほんりょうりはおいしい' },
+      { title:'きもち',         text:'きれいなはなをみてとてもきもちがよくなりました' },
+      { title:'むかしばなし',   text:'むかしむかしあるところにおじいさんとおばあさんがいた' },
+    ]
+  },
+  {
+    title: 'ことわざ',
+    desc:  'ことわざ・慣用句・名言',
+    texts: [
+      { title:'ちりもつもれば', text:'ちりもつもればやまとなる' },
+      { title:'いしのうえ',     text:'いしのうえにもさんねん' },
+      { title:'はなよりだんご', text:'はなよりだんごというくらいじつようがたいせつだ' },
+      { title:'にどあること',   text:'にどあることはさんどある' },
+      { title:'はじめのいっぽ', text:'はじめのいっぽがいちばんたいせつ' },
+      { title:'くろうはかって', text:'わかいときのくろうはかってでもせよ' },
+      { title:'めいじん',       text:'うまれながらのめいじんはいない' },
+      { title:'ないそで',       text:'ないそではふれない' },
+    ]
+  },
+  {
+    title: '全部まとめて',
+    desc:  '全カテゴリをランダムに組み合わせ',
+    all:   true,
+  },
 ];
 
+// ── State ─────────────────────────────────────────────────────────────────────
 const S = {
-  screen: 'menu', mode: 'random',
-  lessonIdx: 0, textIdx: 0, sessionSize: 20, showHint: true,
-  queue: [], pos: 0, tgtKana: null, tgtKey: null,
-  heldKeys: new Set(), pendingChar: null, pendingThumb: null,
+  screen: 'menu',
+  mode: 'random',
+  lessonIdx: 0,
+  textGroupIdx: 0,
+  sessionSize: 20,
+  textSize: 30,
+  textSegs: [],
+  showHint: true,
+
+  queue: [], pos: 0,
+  tgtKana: null, tgtKey: null,
+
+  heldKeys: new Set(),
+  pendingChar:  null,
+  pendingThumb: null,
+
   tStart: 0, firstKey: false, hadWrong: false,
   stats: { total:0, correct:0, msSum:0, errs:{}, t0:0 },
 };
 
 const WINDOW_MS = 50;
 
+// ── Keyboard DOM ──────────────────────────────────────────────────────────────
 const KB_ROWS = [
   ['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP','BracketLeft'],
   ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'],
@@ -574,310 +639,463 @@ const KEL = {};
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
+
   for (const row of KB_ROWS) {
     const div = document.createElement('div');
     div.className = 'kb-row';
     for (const code of row) {
       const e = LAYOUT[code];
       const k = document.createElement('div');
-      k.className = 'kb-key'; k.dataset.code = code;
-      k.innerHTML = `<span class="kb-phys">${PHYS[code]}</span><span class="kb-l">${e.l}</span><span class="kb-n">${e.n}</span><span class="kb-r">${e.r}</span>`;
-      KEL[code] = k; div.appendChild(k);
+      k.className = 'kb-key';
+      k.dataset.code = code;
+      k.innerHTML =
+        `<span class="kb-phys">${PHYS[code]}</span>` +
+        `<span class="kb-l">${e.l}</span>` +
+        `<span class="kb-n">${e.n}</span>` +
+        `<span class="kb-r">${e.r}</span>`;
+      KEL[code] = k;
+      div.appendChild(k);
     }
     kb.appendChild(div);
   }
-  const tr = document.createElement('div'); tr.className = 'kb-row';
+
+  const tr = document.createElement('div');
+  tr.className = 'kb-row';
+
   const muhan = document.createElement('div');
-  muhan.className = 'kb-key k-thumb'; muhan.dataset.code = 'NonConvert';
-  muhan.innerHTML = '無変換<small>左親指</small>'; KEL['NonConvert'] = muhan;
+  muhan.className = 'kb-key k-thumb';
+  muhan.dataset.code = 'NonConvert';
+  muhan.innerHTML = '無変換<small>左親指</small>';
+  KEL['NonConvert'] = muhan;
+
   const henko = document.createElement('div');
-  henko.className = 'kb-key k-conv'; henko.dataset.code = 'Convert';
-  henko.textContent = '変換　右親指'; KEL['Convert'] = henko;
-  tr.appendChild(muhan); tr.appendChild(henko); kb.appendChild(tr);
+  henko.className = 'kb-key k-conv';
+  henko.dataset.code = 'Convert';
+  henko.textContent = '変換　右親指';
+  KEL['Convert'] = henko;
+
+  tr.appendChild(muhan);
+  tr.appendChild(henko);
+  kb.appendChild(tr);
 }
 
 function renderKB() {
   const TGT_CLS = ['tgt','m-n','m-l','m-r','hl-left','hl-right'];
   for (const el of Object.values(KEL)) el.classList.remove(...TGT_CLS);
+
   if (S.heldKeys.has('NonConvert')) KEL['NonConvert']?.classList.add('hl-left');
   if (S.heldKeys.has('Convert'))    KEL['Convert']?.classList.add('hl-right');
+
   const indL = document.getElementById('ind-l');
   const indR = document.getElementById('ind-r');
-  indL.classList.remove('lit-left','req'); indR.classList.remove('lit-right','req');
+  indL.classList.remove('lit-left','req');
+  indR.classList.remove('lit-right','req');
   indL.classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
   indR.classList.toggle('lit-right', S.heldKeys.has('Convert'));
+
   if (!S.tgtKey) return;
+
   const tgtEl = KEL[S.tgtKey.code];
-  if (tgtEl) tgtEl.classList.add('tgt', S.tgtKey.s==='n'?'m-n':S.tgtKey.s==='l'?'m-l':'m-r');
-  if (S.tgtKey.s === 'l') { KEL['NonConvert']?.classList.add('hl-left'); indL.classList.add('lit-left','req'); }
-  else if (S.tgtKey.s === 'r') { KEL['Convert']?.classList.add('hl-right'); indR.classList.add('lit-right','req'); }
+  if (tgtEl) {
+    tgtEl.classList.add('tgt', S.tgtKey.s === 'n' ? 'm-n' : S.tgtKey.s === 'l' ? 'm-l' : 'm-r');
+  }
+
+  if (S.tgtKey.s === 'l') {
+    KEL['NonConvert']?.classList.add('hl-left');
+    indL.classList.add('lit-left', 'req');
+  } else if (S.tgtKey.s === 'r') {
+    KEL['Convert']?.classList.add('hl-right');
+    indR.classList.add('lit-right', 'req');
+  }
 }
 
 function flashKey(code, ok) {
-  const el = KEL[code]; if (!el) return;
+  const el = KEL[code];
+  if (!el) return;
   const cls = ok ? 'fl-ok' : 'fl-err';
   el.classList.add(cls);
   setTimeout(() => el.classList.remove(cls), ok ? 160 : 300);
 }
 
+// ── Queue ─────────────────────────────────────────────────────────────────────
 function shuffle(a) {
-  for (let i = a.length-1; i > 0; i--) {
-    const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
 function buildQueue(chars, size) {
-  const pool=[]; const q=[]; let last=null;
+  const pool = [];
+  const q = [];
+  let last = null;
   while (q.length < size) {
     if (!pool.length) pool.push(...shuffle([...chars]));
-    if (pool[0]===last && pool.length>1) [pool[0],pool[1]]=[pool[1],pool[0]];
-    last=pool.shift(); q.push(last);
+    if (pool[0] === last && pool.length > 1) [pool[0], pool[1]] = [pool[1], pool[0]];
+    last = pool.shift();
+    q.push(last);
   }
   return q;
 }
 
+// ── Start ─────────────────────────────────────────────────────────────────────
 function startLesson(idx) {
   const lesson = LESSONS[idx];
-  S.mode='random'; S.lessonIdx=idx;
-  S.queue=buildQueue(lesson.chars, S.sessionSize);
-  S.pos=0; S.showHint=lesson.primary;
-  S.heldKeys.clear(); clearPending();
-  S.stats={total:0,correct:0,msSum:0,errs:{},t0:performance.now()};
-  document.getElementById('prac-title').textContent=`レッスン${idx+1}: ${lesson.title}`;
-  document.getElementById('hint-lbl').textContent=S.showHint?'ON':'OFF';
-  document.getElementById('text-ctx').style.display='none';
+  S.mode = 'random';
+  S.lessonIdx = idx;
+  S.queue = buildQueue(lesson.chars, S.sessionSize);
+  S.pos = 0;
+  S.showHint = lesson.primary;
+  S.heldKeys.clear();
+  clearPending();
+  S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
+
+  document.getElementById('prac-title').textContent = `レッスン${idx+1}: ${lesson.title}`;
+  document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
+  document.getElementById('text-ctx').style.display = 'none';
   showScreen('practice');
   if (document.activeElement) document.activeElement.blur();
   nextChallenge();
 }
 
-function startText(idx) {
-  const txt = TEXTS[idx];
-  S.mode='text'; S.textIdx=idx;
-  S.queue=[...txt.text].filter(c=>KANA_MAP[c]);
-  S.pos=0; S.showHint=true;
-  S.heldKeys.clear(); clearPending();
-  S.stats={total:0,correct:0,msSum:0,errs:{},t0:performance.now()};
-  document.getElementById('prac-title').textContent=`文章練習: ${txt.title}`;
-  document.getElementById('hint-lbl').textContent='ON';
-  document.getElementById('text-ctx').style.display='';
+function startTextGroup(groupIdx) {
+  const group = TEXT_GROUPS[groupIdx];
+  const pool = group.all
+    ? TEXT_GROUPS.filter(g => !g.all).flatMap(g => g.texts)
+    : group.texts;
+
+  const shuffled = shuffle([...pool]);
+  let roundBuf = [...shuffled];
+  const queue = [];
+  const segs = [];
+
+  while (queue.length < S.textSize) {
+    if (!roundBuf.length) roundBuf = shuffle([...pool]);
+    const txt = roundBuf.shift();
+    const filtered = [...txt.text].filter(c => KANA_MAP[c]);
+    if (!filtered.length) continue;
+    const startInQueue = queue.length;
+    const toTake = Math.min(filtered.length, S.textSize - queue.length);
+    queue.push(...filtered.slice(0, toTake));
+    segs.push({ title: txt.title, text: txt.text, filteredChars: filtered.slice(0, toTake), startInQueue });
+  }
+
+  S.mode = 'text';
+  S.textGroupIdx = groupIdx;
+  S.textSegs = segs;
+  S.queue = queue;
+  S.pos = 0;
+  S.showHint = true;
+  S.heldKeys.clear();
+  clearPending();
+  S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
+
+  document.getElementById('prac-title').textContent = `文章練習: ${group.title}`;
+  document.getElementById('hint-lbl').textContent = 'ON';
+  document.getElementById('text-ctx').style.display = '';
   showScreen('practice');
   if (document.activeElement) document.activeElement.blur();
   nextChallenge();
 }
 
+// ── Practice flow ─────────────────────────────────────────────────────────────
 function nextChallenge() {
   if (S.pos >= S.queue.length) { endSession(); return; }
-  S.tgtKana=S.queue[S.pos]; S.tgtKey=KANA_MAP[S.tgtKana];
-  S.firstKey=false; S.hadWrong=false; S.tStart=0;
-  const n=S.queue.length;
-  document.getElementById('prac-prog').textContent=`${S.pos+1} / ${n}`;
-  document.getElementById('pbar').style.width=`${(S.pos/n)*100}%`;
-  document.getElementById('tgt-kana').textContent=S.tgtKana;
+
+  S.tgtKana = S.queue[S.pos];
+  S.tgtKey  = KANA_MAP[S.tgtKana];
+  S.firstKey = false;
+  S.hadWrong = false;
+  S.tStart   = 0;
+
+  const n = S.queue.length;
+  document.getElementById('prac-prog').textContent = `${S.pos + 1} / ${n}`;
+  document.getElementById('pbar').style.width = `${(S.pos / n) * 100}%`;
+  document.getElementById('tgt-kana').textContent = S.tgtKana;
   document.getElementById('cbox').classList.remove('ok','err');
-  if (S.mode==='text') updateTextCtx();
-  updateHint(); updateSessStats(); renderKB();
+
+  if (S.mode === 'text') updateTextCtx();
+  updateHint();
+  updateSessStats();
+  renderKB();
 }
 
 function updateTextCtx() {
   const el = document.getElementById('text-ctx');
-  const txt = TEXTS[S.textIdx].text;
-  let fi=0; let html='';
-  for (const c of txt) {
-    if (!KANA_MAP[c]) { html+=`<span class="tc-todo">${c}</span>`; continue; }
-    if (fi<S.pos)        html+=`<span class="tc-done">${c}</span>`;
-    else if (fi===S.pos) html+=`<span class="tc-cur">${c}</span>`;
-    else                 html+=`<span class="tc-todo">${c}</span>`;
+  let seg = S.textSegs[S.textSegs.length - 1];
+  for (const s of S.textSegs) {
+    if (S.pos < s.startInQueue + s.filteredChars.length) { seg = s; break; }
+  }
+  const localPos = S.pos - seg.startInQueue;
+  let html = `<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:3px">${seg.title}</div>`;
+  let fi = 0;
+  for (const c of seg.text) {
+    if (!KANA_MAP[c]) { html += `<span class="tc-todo">${c}</span>`; continue; }
+    if (fi < localPos)        html += `<span class="tc-done">${c}</span>`;
+    else if (fi === localPos) html += `<span class="tc-cur">${c}</span>`;
+    else                      html += `<span class="tc-todo">${c}</span>`;
     fi++;
   }
-  el.innerHTML=html;
+  el.innerHTML = html;
 }
 
 function updateHint() {
-  const el=document.getElementById('hint');
-  if (!S.showHint||!S.tgtKey) { el.innerHTML=''; return; }
-  const lbl=PHYS[S.tgtKey.code]||S.tgtKey.code;
-  let html='';
-  if (S.tgtKey.s==='l')      html=`<span class="hk">無変換</span> ＋ <span class="hk">${lbl}</span>`;
-  else if (S.tgtKey.s==='r') html=`<span class="hk">変換</span> ＋ <span class="hk">${lbl}</span>`;
-  else                       html=`<span class="hk">${lbl}</span>`;
-  el.innerHTML=html;
+  const el = document.getElementById('hint');
+  if (!S.showHint || !S.tgtKey) { el.innerHTML = ''; return; }
+  const lbl = PHYS[S.tgtKey.code] || S.tgtKey.code;
+  let html = '';
+  if (S.tgtKey.s === 'l')      html = `<span class="hk">無変換</span> ＋ <span class="hk">${lbl}</span>`;
+  else if (S.tgtKey.s === 'r') html = `<span class="hk">変換</span> ＋ <span class="hk">${lbl}</span>`;
+  else                         html = `<span class="hk">${lbl}</span>`;
+  el.innerHTML = html;
 }
 
 function updateSessStats() {
-  const {total,correct,msSum}=S.stats;
+  const { total, correct, msSum } = S.stats;
   if (!total) {
-    document.getElementById('s-acc').textContent='－';
-    document.getElementById('s-cpm').textContent='－'; return;
+    document.getElementById('s-acc').textContent = '－';
+    document.getElementById('s-cpm').textContent = '－';
+    return;
   }
-  document.getElementById('s-acc').textContent=`${Math.round(correct/total*100)}%`;
-  document.getElementById('s-cpm').textContent=msSum>0?Math.round(correct/msSum*60000):'－';
+  document.getElementById('s-acc').textContent = `${Math.round(correct/total*100)}%`;
+  document.getElementById('s-cpm').textContent =
+    msSum > 0 ? Math.round(correct/msSum*60000) : '－';
 }
 
 function evaluate(code, shift) {
   if (!S.tgtKey) return;
-  const now=performance.now();
-  if (!S.firstKey) { S.firstKey=true; S.tStart=now; }
-  const ok=code===S.tgtKey.code && shift===S.tgtKey.s;
+
+  const now = performance.now();
+  if (!S.firstKey) { S.firstKey = true; S.tStart = now; }
+
+  const ok = code === S.tgtKey.code && shift === S.tgtKey.s;
+
   if (ok) {
-    const elapsed=now-S.tStart;
-    S.stats.total++; S.stats.msSum+=elapsed;
+    const elapsed = now - S.tStart;
+    S.stats.total++;
+    S.stats.msSum += elapsed;
     if (!S.hadWrong) S.stats.correct++;
-    else S.stats.errs[S.tgtKana]=(S.stats.errs[S.tgtKana]||0)+1;
-    S.tgtKey=null;
-    flashKey(code,true);
+    else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
+
+    S.tgtKey = null;
+
+    flashKey(code, true);
     document.getElementById('cbox').classList.add('ok');
     S.pos++;
-    setTimeout(()=>{ if(S.screen==='practice') nextChallenge(); },130);
+    setTimeout(() => { if (S.screen === 'practice') nextChallenge(); }, 130);
   } else {
-    S.hadWrong=true;
-    S.stats.errs[S.tgtKana]=(S.stats.errs[S.tgtKana]||0)+1;
-    flashKey(code,false);
-    const cbox=document.getElementById('cbox');
+    S.hadWrong = true;
+    S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
+    flashKey(code, false);
+    const cbox = document.getElementById('cbox');
     cbox.classList.add('err');
-    setTimeout(()=>cbox.classList.remove('err'),300);
+    setTimeout(() => cbox.classList.remove('err'), 300);
   }
 }
 
 function endSession() {
-  const {total,correct,msSum,errs}=S.stats;
-  const acc=total?Math.round(correct/total*100):0;
-  const cpm=msSum>0?Math.round(correct/msSum*60000):0;
-  document.getElementById('r-acc').textContent=`${acc}%`;
-  document.getElementById('r-cpm').textContent=cpm;
-  document.getElementById('r-sub').textContent=`正解 ${correct} / ${total} 問`;
-  const errEntries=Object.entries(errs).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const erEl=document.getElementById('r-errs');
+  const { total, correct, msSum, errs } = S.stats;
+  const acc = total ? Math.round(correct/total*100) : 0;
+  const cpm = msSum > 0 ? Math.round(correct/msSum*60000) : 0;
+
+  document.getElementById('r-acc').textContent = `${acc}%`;
+  document.getElementById('r-cpm').textContent = cpm;
+  document.getElementById('r-sub').textContent = `正解 ${correct} / ${total} 問`;
+
+  const errEntries = Object.entries(errs).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const erEl = document.getElementById('r-errs');
   if (!errEntries.length) {
-    erEl.innerHTML='<span style="color:var(--green)">ミスなし！完璧です</span>';
+    erEl.innerHTML = '<span style="color:var(--green)">ミスなし！完璧です</span>';
   } else {
-    erEl.innerHTML='<h3>苦手な文字</h3>'+
-      errEntries.map(([k,v])=>`<span class="err-chip">${k}<span class="err-cnt">×${v}</span></span>`).join('');
+    erEl.innerHTML = '<h3>苦手な文字</h3>' +
+      errEntries.map(([k,v]) =>
+        `<span class="err-chip">${k}<span class="err-cnt">×${v}</span></span>`
+      ).join('');
   }
-  if (S.mode==='random') saveProgress(`l${S.lessonIdx}`,acc,cpm);
-  else                   saveProgress(`t${S.textIdx}`,acc,cpm);
+
+  if (S.mode === 'random') saveProgress(`l${S.lessonIdx}`,    acc, cpm);
+  else                     saveProgress(`tg${S.textGroupIdx}`, acc, cpm);
   showScreen('stats');
 }
 
+// ── Input handling ────────────────────────────────────────────────────────────
 function clearPending() {
-  if (S.pendingChar) { clearTimeout(S.pendingChar.tid); S.pendingChar=null; }
-  S.pendingThumb=null;
+  if (S.pendingChar) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+  S.pendingThumb = null;
 }
 
 function onKeyDown(e) {
-  if (S.screen!=='practice') return;
+  if (S.screen !== 'practice') return;
   if (e.repeat) return;
-  if (e.isComposing) { document.getElementById('ime-warn').style.display='block'; return; }
-  const code=e.code; const now=performance.now();
-  if (code==='NonConvert'||code==='Convert') {
-    e.preventDefault(); S.heldKeys.add(code);
-    if (S.pendingChar && (now-S.pendingChar.time)<=WINDOW_MS) {
-      clearTimeout(S.pendingChar.tid);
-      evaluate(S.pendingChar.code, code==='Convert'?'r':'l');
-      S.pendingChar=null;
-    } else { S.pendingThumb={code,time:now}; }
-    renderKB(); return;
+
+  if (e.isComposing) {
+    document.getElementById('ime-warn').style.display = 'block';
+    return;
   }
+
+  const code = e.code;
+  const now  = performance.now();
+
+  if (code === 'NonConvert' || code === 'Convert') {
+    e.preventDefault();
+    S.heldKeys.add(code);
+
+    if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
+      clearTimeout(S.pendingChar.tid);
+      const shift = code === 'Convert' ? 'r' : 'l';
+      evaluate(S.pendingChar.code, shift);
+      S.pendingChar = null;
+    } else {
+      S.pendingThumb = { code, time: now };
+    }
+
+    renderKB();
+    return;
+  }
+
   if (!LAYOUT[code]) return;
   e.preventDefault();
-  if (S.pendingChar && S.pendingChar.code!==code) {
-    clearTimeout(S.pendingChar.tid); evaluate(S.pendingChar.code,'n'); S.pendingChar=null;
+
+  if (S.pendingChar && S.pendingChar.code !== code) {
+    clearTimeout(S.pendingChar.tid);
+    evaluate(S.pendingChar.code, 'n');
+    S.pendingChar = null;
   }
-  if (S.heldKeys.has('Convert'))    { evaluate(code,'r'); return; }
-  if (S.heldKeys.has('NonConvert')) { evaluate(code,'l'); return; }
-  if (S.pendingThumb && (now-S.pendingThumb.time)<=WINDOW_MS) {
-    evaluate(code, S.pendingThumb.code==='Convert'?'r':'l');
-    S.pendingThumb=null; return;
+
+  if (S.heldKeys.has('Convert'))    { evaluate(code, 'r'); return; }
+  if (S.heldKeys.has('NonConvert')) { evaluate(code, 'l'); return; }
+
+  if (S.pendingThumb && (now - S.pendingThumb.time) <= WINDOW_MS) {
+    const shift = S.pendingThumb.code === 'Convert' ? 'r' : 'l';
+    evaluate(code, shift);
+    S.pendingThumb = null;
+    return;
   }
-  const tid=setTimeout(()=>{ if(S.pendingChar&&S.pendingChar.code===code){evaluate(code,'n');S.pendingChar=null;} },WINDOW_MS);
-  S.pendingChar={code,time:now,tid};
+
+  const tid = setTimeout(() => {
+    if (S.pendingChar && S.pendingChar.code === code) {
+      evaluate(code, 'n');
+      S.pendingChar = null;
+    }
+  }, WINDOW_MS);
+  S.pendingChar = { code, time: now, tid };
 }
 
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
-  if (e.code==='NonConvert'||e.code==='Convert') {
-    e.preventDefault(); S.pendingThumb=null;
-    if (S.screen==='practice') renderKB();
+  if (e.code === 'NonConvert' || e.code === 'Convert') {
+    e.preventDefault();
+    S.pendingThumb = null;
+    if (S.screen === 'practice') renderKB();
   }
 }
 
+// ── Screen / UI ───────────────────────────────────────────────────────────────
 function showScreen(name) {
-  S.screen=name;
-  document.getElementById('screen-menu').style.display     = name==='menu'     ?'':  'none';
-  document.getElementById('screen-practice').style.display = name==='practice' ?'':  'none';
-  document.getElementById('screen-stats').style.display    = name==='stats'    ?'':  'none';
+  S.screen = name;
+  document.getElementById('screen-menu').style.display     = name==='menu'     ? '' : 'none';
+  document.getElementById('screen-practice').style.display = name==='practice' ? '' : 'none';
+  document.getElementById('screen-stats').style.display    = name==='stats'    ? '' : 'none';
 }
 
 function renderMenu() {
-  const grid=document.getElementById('lesson-grid'); grid.innerHTML='';
-  LESSONS.forEach((lesson,i)=>{
-    const best=loadProgress(`l${i}`);
-    const b=document.createElement('button');
-    b.className='lesson-btn'+(lesson.primary?' primary':'');
-    b.innerHTML=`<div><span class="lesson-num">${i+1}</span>${lesson.title}</div>`+
-      `<div class="lesson-best">${best?`ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})`:'まだ未挑戦'}</div>`;
-    b.onclick=()=>startLesson(i); grid.appendChild(b);
+  const grid = document.getElementById('lesson-grid');
+  grid.innerHTML = '';
+  LESSONS.forEach((lesson, i) => {
+    const best = loadProgress(`l${i}`);
+    const b = document.createElement('button');
+    b.className = 'lesson-btn' + (lesson.primary ? ' primary' : '');
+    b.innerHTML =
+      `<div><span class="lesson-num">${i+1}</span>${lesson.title}</div>` +
+      `<div class="lesson-best">${best ? `ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})` : 'まだ未挑戦'}</div>`;
+    b.onclick = () => startLesson(i);
+    grid.appendChild(b);
   });
-  const tgrid=document.getElementById('text-grid'); tgrid.innerHTML='';
-  TEXTS.forEach((txt,i)=>{
-    const best=loadProgress(`t${i}`);
-    const b=document.createElement('button'); b.className='text-btn';
-    const preview=txt.text.slice(0,12)+(txt.text.length>12?'…':'');
-    b.innerHTML=`<div>${txt.title} <span class="text-len">(${txt.text.length}文字)</span></div>`+
-      `<div class="text-preview">${preview}</div>`+
-      `<div class="lesson-best">${best?`ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})`:'まだ未挑戦'}</div>`;
-    b.onclick=()=>startText(i); tgrid.appendChild(b);
+
+  const tgrid = document.getElementById('text-grid');
+  tgrid.innerHTML = '';
+  TEXT_GROUPS.forEach((group, i) => {
+    const best = loadProgress(`tg${i}`);
+    const count = group.all
+      ? TEXT_GROUPS.filter(g => !g.all).reduce((s, g) => s + g.texts.length, 0)
+      : group.texts.length;
+    const b = document.createElement('button');
+    b.className = 'text-btn';
+    b.innerHTML =
+      `<div style="font-weight:bold">${group.title} <span class="text-len">(${count}本)</span></div>` +
+      `<div class="text-preview">${group.desc}</div>` +
+      `<div class="lesson-best">${best ? `ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})` : 'まだ未挑戦'}</div>`;
+    b.onclick = () => startTextGroup(i);
+    tgrid.appendChild(b);
   });
-  document.querySelectorAll('.size-row button').forEach(b=>{
-    b.classList.toggle('active',parseInt(b.textContent)===S.sessionSize);
+
+  document.querySelectorAll('#screen-menu .size-row:first-of-type button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === S.sessionSize);
+  });
+  document.querySelectorAll('#tsize-row button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === S.textSize);
   });
 }
 
-function setSize(n) { S.sessionSize=n; renderMenu(); }
+function setSize(n)     { S.sessionSize = n; renderMenu(); }
+function setTextSize(n) { S.textSize    = n; renderMenu(); }
 
 function goMenu() {
-  clearPending(); S.heldKeys.clear();
-  showScreen('menu'); renderMenu();
+  clearPending();
+  S.heldKeys.clear();
+  showScreen('menu');
+  renderMenu();
 }
 
 function replayLesson() {
-  if (S.mode==='text') startText(S.textIdx); else startLesson(S.lessonIdx);
+  if (S.mode === 'text') startTextGroup(S.textGroupIdx);
+  else                   startLesson(S.lessonIdx);
 }
 
 function toggleHint() {
-  S.showHint=!S.showHint;
-  document.getElementById('hint-lbl').textContent=S.showHint?'ON':'OFF';
+  S.showHint = !S.showHint;
+  document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
   updateHint();
 }
 
-function saveProgress(key,acc,cpm) {
+// ── localStorage ──────────────────────────────────────────────────────────────
+function saveProgress(key, acc, cpm) {
   try {
-    const k=`a123_${key}`;
-    const prev=JSON.parse(localStorage.getItem(k)||'null');
-    if (!prev||acc>prev.acc||(acc===prev.acc&&cpm>prev.cpm)) {
-      const d=new Date().toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
-      localStorage.setItem(k,JSON.stringify({acc,cpm,d}));
+    const k = `a123_${key}`;
+    const prev = JSON.parse(localStorage.getItem(k) || 'null');
+    if (!prev || acc > prev.acc || (acc === prev.acc && cpm > prev.cpm)) {
+      const d = new Date().toLocaleDateString('ja-JP', { month:'numeric', day:'numeric' });
+      localStorage.setItem(k, JSON.stringify({ acc, cpm, d }));
     }
   } catch(_) {}
 }
 
 function loadProgress(key) {
-  try { return JSON.parse(localStorage.getItem(`a123_${key}`)||'null'); }
+  try { return JSON.parse(localStorage.getItem(`a123_${key}`) || 'null'); }
   catch(_) { return null; }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  buildKeyboard(); renderMenu();
-  document.addEventListener('keydown',onKeyDown);
-  document.addEventListener('keyup',onKeyUp);
-  document.addEventListener('visibilitychange',()=>{
-    if (document.hidden) { S.heldKeys.clear(); clearPending(); if(S.screen==='practice') renderKB(); }
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildKeyboard();
+  renderMenu();
+
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup',   onKeyUp);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      S.heldKeys.clear();
+      clearPending();
+      if (S.screen === 'practice') renderKB();
+    }
   });
-  document.addEventListener('keydown',()=>{
-    const w=document.getElementById('ime-warn');
-    if (w.style.display!=='none') w.style.display='none';
-  },{capture:true,passive:true});
+
+  document.addEventListener('keydown', () => {
+    const w = document.getElementById('ime-warn');
+    if (w.style.display !== 'none') w.style.display = 'none';
+  }, { capture: true, passive: true });
 });
 </script>
 </body>
