@@ -410,6 +410,13 @@
 
   <div class="menu-section">
     <div class="menu-sec-hd">文章練習</div>
+    <div class="size-row" id="tsize-row">
+      文字数:
+      <button onclick="setTextSize(20)">20</button>
+      <button onclick="setTextSize(30)">30</button>
+      <button onclick="setTextSize(50)">50</button>
+      <button onclick="setTextSize(100)">100</button>
+    </div>
     <div class="text-grid" id="text-grid"></div>
   </div>
 </div>
@@ -546,27 +553,57 @@ const LESSONS = [
 ];
 
 // ── 文章練習テキスト ──────────────────────────────────────────────────────────
-const TEXTS = [
-  { title:'あいさつ①',
-    text: 'こんにちはおげんきですか' },
-  { title:'あいさつ②',
-    text: 'おはようございますきょうもよろしくおねがいします' },
-  { title:'ありがとう',
-    text: 'ありがとうございますたいへんたすかりました' },
-  { title:'じこしょうかい',
-    text: 'わたしはにほんごをまいにちれんしゅうしています' },
-  { title:'まいにちのせいかつ',
-    text: 'まいあさはやくおきてかおをあらいごはんをたべます' },
-  { title:'きせつ',
-    text: 'はるになるとさくらがさいてとてもきれいです' },
-  { title:'にほんごのれんしゅう',
-    text: 'まいにちれんしゅうするとだんだんはやくなりますがんばりましょう' },
-  { title:'むかしばなし',
-    text: 'むかしむかしあるところにおじいさんとおばあさんがすんでいました' },
-  { title:'たべもの',
-    text: 'すしやてんぷらやそばなどのにほんりょうりはとてもおいしいです' },
-  { title:'きもち',
-    text: 'きれいなはなをみてとてもきもちがよくなりましたありがとうございます' },
+// 中央段のみ: A/S/D/F/G/H/J/K/L/;/' の文字だけで構成（全て検証済み）
+const TEXT_GROUPS = [
+  {
+    title: '中央段のみ',
+    desc:  'ホーム段キーだけで入力できる文章',
+    texts: [
+      { title:'なかまたくさん',   text:'わたしのなかまたくさんいる' },
+      { title:'きのうのきおく',   text:'たのしいきのうのきおくいつかかたりたい' },
+      { title:'ゆきのさくら',     text:'ゆきのなかうつくしいさくらある' },
+      { title:'おおきなちから',   text:'おおきなちからのあるなかまいつかなりたい' },
+      { title:'うつくしいきおく', text:'うつくしいたのしいわたしのきおく' },
+      { title:'ゆきのなか',       text:'たくさんのゆきのなかわたしたちたたずんだ' },
+      { title:'ゆきのいろ',       text:'きのうのゆきのいろのうつくしさかたりたい' },
+      { title:'わかりあう',       text:'わかりあうなかまのたのしさかたりたい' },
+    ]
+  },
+  {
+    title: '日常会話',
+    desc:  '日常でよく使う表現',
+    texts: [
+      { title:'あいさつ①',     text:'こんにちはおげんきですか' },
+      { title:'あいさつ②',     text:'おはようございますきょうもよろしくおねがいします' },
+      { title:'ありがとう',     text:'ありがとうございますたいへんたすかりました' },
+      { title:'じこしょうかい', text:'わたしはにほんごをまいにちれんしゅうしています' },
+      { title:'せいかつ',       text:'まいあさはやくおきてかおをあらいごはんをたべます' },
+      { title:'きせつ',         text:'はるになるとさくらがさいてとてもきれいです' },
+      { title:'れんしゅう',     text:'まいにちれんしゅうするとだんだんはやくなります' },
+      { title:'しょくじ',       text:'すしやてんぷらやそばなどのにほんりょうりはおいしい' },
+      { title:'きもち',         text:'きれいなはなをみてとてもきもちがよくなりました' },
+      { title:'むかしばなし',   text:'むかしむかしあるところにおじいさんとおばあさんがいた' },
+    ]
+  },
+  {
+    title: 'ことわざ',
+    desc:  'ことわざ・慣用句・名言',
+    texts: [
+      { title:'ちりもつもれば', text:'ちりもつもればやまとなる' },
+      { title:'いしのうえ',     text:'いしのうえにもさんねん' },
+      { title:'はなよりだんご', text:'はなよりだんごというくらいじつようがたいせつだ' },
+      { title:'にどあること',   text:'にどあることはさんどある' },
+      { title:'はじめのいっぽ', text:'はじめのいっぽがいちばんたいせつ' },
+      { title:'くろうはかって', text:'わかいときのくろうはかってでもせよ' },
+      { title:'めいじん',       text:'うまれながらのめいじんはいない' },
+      { title:'ないそで',       text:'ないそではふれない' },
+    ]
+  },
+  {
+    title: '全部まとめて',
+    desc:  '全カテゴリをランダムに組み合わせ',
+    all:   true,
+  },
 ];
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -574,8 +611,10 @@ const S = {
   screen: 'menu',
   mode: 'random',      // 'random' | 'text'
   lessonIdx: 0,
-  textIdx: 0,
+  textGroupIdx: 0,
   sessionSize: 20,
+  textSize: 30,
+  textSegs: [],        // [{title,text,filteredChars,startInQueue}]
   showHint: true,
 
   queue: [], pos: 0,
@@ -723,19 +762,39 @@ function startLesson(idx) {
   nextChallenge();
 }
 
-function startText(idx) {
-  const txt = TEXTS[idx];
+function startTextGroup(groupIdx) {
+  const group = TEXT_GROUPS[groupIdx];
+  const pool = group.all
+    ? TEXT_GROUPS.filter(g => !g.all).flatMap(g => g.texts)
+    : group.texts;
+
+  const shuffled = shuffle([...pool]);
+  let roundBuf = [...shuffled];
+  const queue = [];
+  const segs = [];
+
+  while (queue.length < S.textSize) {
+    if (!roundBuf.length) roundBuf = shuffle([...pool]);
+    const txt = roundBuf.shift();
+    const filtered = [...txt.text].filter(c => KANA_MAP[c]);
+    if (!filtered.length) continue;
+    const startInQueue = queue.length;
+    const toTake = Math.min(filtered.length, S.textSize - queue.length);
+    queue.push(...filtered.slice(0, toTake));
+    segs.push({ title: txt.title, text: txt.text, filteredChars: filtered.slice(0, toTake), startInQueue });
+  }
+
   S.mode = 'text';
-  S.textIdx = idx;
-  // Filter to only characters that exist in the layout
-  S.queue = [...txt.text].filter(c => KANA_MAP[c]);
+  S.textGroupIdx = groupIdx;
+  S.textSegs = segs;
+  S.queue = queue;
   S.pos = 0;
   S.showHint = true;
   S.heldKeys.clear();
   clearPending();
   S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
 
-  document.getElementById('prac-title').textContent = `文章練習: ${txt.title}`;
+  document.getElementById('prac-title').textContent = `文章練習: ${group.title}`;
   document.getElementById('hint-lbl').textContent = 'ON';
   document.getElementById('text-ctx').style.display = '';
   showScreen('practice');
@@ -767,23 +826,19 @@ function nextChallenge() {
 
 function updateTextCtx() {
   const el = document.getElementById('text-ctx');
-  const txt = TEXTS[S.textIdx].text;
-  // Build spans aligned to the filtered queue
-  const filtered = [...txt].filter(c => KANA_MAP[c]);
-  const pos = S.pos;
-
-  // Map filtered positions back into the original text for display
+  // Find which segment we're in
+  let seg = S.textSegs[S.textSegs.length - 1];
+  for (const s of S.textSegs) {
+    if (S.pos < s.startInQueue + s.filteredChars.length) { seg = s; break; }
+  }
+  const localPos = S.pos - seg.startInQueue;
+  let html = `<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:3px">${seg.title}</div>`;
   let fi = 0;
-  let html = '';
-  for (const c of txt) {
-    if (!KANA_MAP[c]) {
-      // Non-typed character (shouldn't exist in our pure-hiragana texts but handle it)
-      html += `<span class="tc-todo">${c}</span>`;
-      continue;
-    }
-    if (fi < pos)       html += `<span class="tc-done">${c}</span>`;
-    else if (fi === pos) html += `<span class="tc-cur">${c}</span>`;
-    else                html += `<span class="tc-todo">${c}</span>`;
+  for (const c of seg.text) {
+    if (!KANA_MAP[c]) { html += `<span class="tc-todo">${c}</span>`; continue; }
+    if (fi < localPos)        html += `<span class="tc-done">${c}</span>`;
+    else if (fi === localPos) html += `<span class="tc-cur">${c}</span>`;
+    else                      html += `<span class="tc-todo">${c}</span>`;
     fi++;
   }
   el.innerHTML = html;
@@ -863,8 +918,8 @@ function endSession() {
       ).join('');
   }
 
-  if (S.mode === 'random') saveProgress(`l${S.lessonIdx}`, acc, cpm);
-  else                     saveProgress(`t${S.textIdx}`,   acc, cpm);
+  if (S.mode === 'random') saveProgress(`l${S.lessonIdx}`,    acc, cpm);
+  else                     saveProgress(`tg${S.textGroupIdx}`, acc, cpm);
   showScreen('stats');
 }
 
@@ -963,29 +1018,36 @@ function renderMenu() {
     grid.appendChild(b);
   });
 
-  // ── Text practice ──
+  // ── Text practice groups ──
   const tgrid = document.getElementById('text-grid');
   tgrid.innerHTML = '';
-  TEXTS.forEach((txt, i) => {
-    const best = loadProgress(`t${i}`);
+  TEXT_GROUPS.forEach((group, i) => {
+    const best = loadProgress(`tg${i}`);
+    const count = group.all
+      ? TEXT_GROUPS.filter(g => !g.all).reduce((s, g) => s + g.texts.length, 0)
+      : group.texts.length;
     const b = document.createElement('button');
     b.className = 'text-btn';
-    const preview = txt.text.slice(0, 12) + (txt.text.length > 12 ? '…' : '');
     b.innerHTML =
-      `<div>${txt.title} <span class="text-len">(${txt.text.length}文字)</span></div>` +
-      `<div class="text-preview">${preview}</div>` +
+      `<div style="font-weight:bold">${group.title} <span class="text-len">(${count}本)</span></div>` +
+      `<div class="text-preview">${group.desc}</div>` +
       `<div class="lesson-best">${best ? `ベスト: ${best.acc}% / ${best.cpm} CPM (${best.d})` : 'まだ未挑戦'}</div>`;
-    b.onclick = () => startText(i);
+    b.onclick = () => startTextGroup(i);
     tgrid.appendChild(b);
   });
 
-  // Size buttons
-  document.querySelectorAll('.size-row button').forEach(b => {
+  // Size buttons (random)
+  document.querySelectorAll('#screen-menu .size-row:first-of-type button').forEach(b => {
     b.classList.toggle('active', parseInt(b.textContent) === S.sessionSize);
+  });
+  // Size buttons (text)
+  document.querySelectorAll('#tsize-row button').forEach(b => {
+    b.classList.toggle('active', parseInt(b.textContent) === S.textSize);
   });
 }
 
-function setSize(n) { S.sessionSize = n; renderMenu(); }
+function setSize(n)     { S.sessionSize = n; renderMenu(); }
+function setTextSize(n) { S.textSize    = n; renderMenu(); }
 
 function goMenu() {
   clearPending();
@@ -995,7 +1057,7 @@ function goMenu() {
 }
 
 function replayLesson() {
-  if (S.mode === 'text') startText(S.textIdx);
+  if (S.mode === 'text') startTextGroup(S.textGroupIdx);
   else                   startLesson(S.lessonIdx);
 }
 
