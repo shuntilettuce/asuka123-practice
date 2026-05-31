@@ -378,6 +378,8 @@
       flex-direction: column; gap: 1px;
     }
     .kb-key.k-thumb small { font-size: 0.6rem; color: #8888aa; }
+    .kb-key.k-shift-trigger { border-color: #ff79c6 !important; }
+    .kb-key.k-shift-trigger .kb-phys { color: #ff79c6 !important; }
     .kb-key.k-space {
       width: 240px; height: 38px;
       font-size: 0.72rem; color: #555;
@@ -504,8 +506,12 @@
     <button class="layout-btn" data-lid="asuka123" onclick="switchLayout('asuka123')">飛鳥123</button>
     <button class="layout-btn" data-lid="nicola"   onclick="switchLayout('nicola')">NICOLA</button>
     <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v16</button>
+    <button class="layout-btn" data-lid="shingeta" onclick="switchLayout('shingeta')">新下駄配列</button>
   </div>
-  <p class="layout-desc" id="layout-desc"></p>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <p class="layout-desc" id="layout-desc" style="margin:0;flex:1"></p>
+    <button class="btn" style="white-space:nowrap;font-size:0.8rem" onclick="openTutorial()">チュートリアル</button>
+  </div>
 
   <div class="size-row">
     問題数（ランダム練習）:
@@ -523,11 +529,11 @@
   <div class="menu-section">
     <div class="menu-sec-hd">文章練習</div>
     <div class="size-row" id="tsize-row">
-      文字数:
+      テキスト数:
+      <button onclick="setTextSize(3)">3</button>
+      <button onclick="setTextSize(5)">5</button>
+      <button onclick="setTextSize(10)">10</button>
       <button onclick="setTextSize(20)">20</button>
-      <button onclick="setTextSize(30)">30</button>
-      <button onclick="setTextSize(50)">50</button>
-      <button onclick="setTextSize(100)">100</button>
     </div>
     <div class="text-grid" id="text-grid"></div>
   </div>
@@ -571,6 +577,20 @@
     <button class="btn" onclick="toggleHint()">ヒント: <span id="hint-lbl">ON</span></button>
     <button class="btn" id="sound-btn" onclick="toggleSound()">音: <span id="sound-lbl">ON</span></button>
     <button class="btn" onclick="goMenu()">メニューへ</button>
+  </div>
+</div>
+
+<!-- ══════════ TUTORIAL MODAL ══════════ -->
+<div id="tut-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:none;align-items:center;justify-content:center">
+  <div id="tut-modal" style="background:var(--surface);border:1px solid var(--key-border);border-radius:12px;padding:28px 32px;max-width:520px;width:90%;position:relative">
+    <button onclick="closeTutorial()" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;line-height:1">✕</button>
+    <div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:4px" id="tut-step"></div>
+    <h3 style="color:var(--purple);margin-bottom:14px" id="tut-title"></h3>
+    <div style="line-height:1.75;font-size:0.96rem" id="tut-body"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:22px">
+      <button class="btn" onclick="tutNav(-1)" id="tut-prev">← 前へ</button>
+      <button class="btn primary" onclick="tutNav(1)" id="tut-next">次へ →</button>
+    </div>
   </div>
 </div>
 
@@ -651,6 +671,14 @@ const LAYOUTS = {
       Slash:  { n:'め', l:'？', r:'ぼ' },
     },
     homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'],
+    tutorial: [
+      { title: '飛鳥123とは',
+        body: '飛鳥123は親指シフト系のかな入力配列です。<br>各キーには最大3文字が割り当てられています。' },
+      { title: '入力方法',
+        body: '<b>通常打鍵</b>：キー単独を押す<br><b>左シフト</b>：無変換を押しながらキーを押す<br><b>右シフト</b>：変換を押しながらキーを押す<br><br>親指キーとかなキーは同時押しでOK（どちらが先でも可）' },
+      { title: '練習のコツ',
+        body: 'まずはレッスン1（ホーム段・通常のみ）から始めましょう。<br>ホーム段はASDFG・HJKLのキーです。<br>通常打鍵に慣れたらシフト入力に挑戦！' },
+    ],
   },
 
   // ── NICOLA（親指シフト / JIS X 6004） ────────────────────────────────────
@@ -691,6 +719,14 @@ const LAYOUTS = {
       Slash:  { n:'',   l:'',   r:'ぉ' },
     },
     homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
+    tutorial: [
+      { title: 'NICOLAとは',
+        body: 'NICOLA（ニコラ）はJIS X 6004として規格化された、最もポピュラーな親指シフト配列です。' },
+      { title: '入力方法',
+        body: '<b>通常打鍵</b>：キー単独を押す<br><b>左シフト</b>：無変換を押しながらキーを押す<br><b>右シフト</b>：変換を押しながらキーを押す<br><br>操作方法は飛鳥123と同じです。' },
+      { title: '特徴',
+        body: '50音が直感的な位置に配置されています。<br>左右対称の設計で覚えやすいのが特徴です。<br>まずはホーム段から練習しましょう！' },
+    ],
   },
 
   // ── 薙刀式 v16快速版 ─────────────────────────────────────────────────────
@@ -765,6 +801,92 @@ const LAYOUTS = {
       Slash:  { n:'れ', l:'',   r:''   },
     },
     homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
+    tutorial: [
+      { title: '薙刀式 v16とは',
+        body: '薙刀式はセンターシフト方式のかな配列です。<br>無変換・変換どちらを押しても同じシフト効果があります。' },
+      { title: 'シフト入力',
+        body: '<b>シフト</b>：無変換 または 変換 ＋ キー<br><br>濁音・半濁音は<b>2キー同時打鍵</b>で入力します。<br>例：<b>が</b> ＝ F＋J（クロスハンド）<br>　　<b>ぼ</b> ＝ J＋Z<br>　　<b>ぱ</b> ＝ M＋C' },
+      { title: '練習のコツ',
+        body: '最初はシフトなし（レッスン3・4）から練習し、<br>通常打鍵に慣れたら濁音・半濁音コンボに挑戦しましょう。' },
+    ],
+  },
+
+  // ── 新下駄配列 ────────────────────────────────────────────────────────────────
+  shingeta: {
+    name: '新下駄配列',
+    desc: '中指・薬指シフト方式（作者：コウイ）。D/K=中指シフト、S/L=薬指シフト。親指キー不使用',
+    thumbMode: 'finger',
+    fingerShiftKeys: ['KeyD','KeyK','KeyS','KeyL'],
+    keys: {
+      KeyQ: { n:'ー', l:'', r:'' },
+      KeyW: { n:'に', l:'', r:'' },
+      KeyE: { n:'は', l:'', r:'' },
+      KeyR: { n:'、', l:'', r:'' },
+      KeyT: { n:'ち', l:'', r:'' },
+      KeyY: { n:'ぐ', l:'', r:'' },
+      KeyU: { n:'ば', l:'', r:'' },
+      KeyI: { n:'こ', l:'', r:'' },
+      KeyO: { n:'が', l:'', r:'' },
+      KeyP: { n:'ひ', l:'', r:'' },
+      BracketLeft: { n:'げ', l:'', r:'' },
+      KeyA: { n:'の', l:'', r:'' },
+      KeyS: { n:'と', l:'', r:'' },
+      KeyD: { n:'か', l:'', r:'' },
+      KeyF: { n:'ん', l:'', r:'' },
+      KeyG: { n:'っ', l:'', r:'' },
+      KeyH: { n:'く', l:'', r:'' },
+      KeyJ: { n:'う', l:'', r:'' },
+      KeyK: { n:'い', l:'', r:'' },
+      KeyL: { n:'し', l:'', r:'' },
+      Semicolon: { n:'な', l:'', r:'' },
+      KeyZ: { n:'す', l:'', r:'' },
+      KeyX: { n:'ま', l:'', r:'' },
+      KeyC: { n:'き', l:'', r:'' },
+      KeyV: { n:'る', l:'', r:'' },
+      KeyB: { n:'つ', l:'', r:'' },
+      KeyN: { n:'て', l:'', r:'' },
+      KeyM: { n:'た', l:'', r:'' },
+      Comma:  { n:'で', l:'', r:'' },
+      Period: { n:'。', l:'', r:'' },
+      Slash:  { n:'ぶ', l:'', r:'' },
+    },
+    comboMap: {
+      // K（右中指）→ 左手キーをシフト
+      'KeyK:KeyQ':'ふぁ','KeyK:KeyW':'ご', 'KeyK:KeyE':'ふ', 'KeyK:KeyR':'ふぃ','KeyK:KeyT':'ふぇ',
+      'KeyK:KeyA':'ほ',  'KeyK:KeyS':'じ', 'KeyK:KeyD':'れ', 'KeyK:KeyF':'も',  'KeyK:KeyG':'ゆ',
+      'KeyK:KeyZ':'づ',  'KeyK:KeyX':'ぞ', 'KeyK:KeyC':'ぼ', 'KeyK:KeyV':'む',  'KeyK:KeyB':'ふぉ',
+      // D（左中指）→ 右手キーをシフト
+      'KeyD:KeyY':'うぃ','KeyD:KeyU':'ぱ', 'KeyD:KeyI':'よ', 'KeyD:KeyO':'み',  'KeyD:KeyP':'うぇ',
+      'KeyD:KeyH':'へ',  'KeyD:KeyJ':'あ', 'KeyD:Semicolon':'え',
+      'KeyD:KeyN':'せ',  'KeyD:KeyM':'ね', 'KeyD:Comma':'べ','KeyD:Period':'ぷ','KeyD:Slash':'ヴ',
+      // L（右薬指）→ 左手キーをシフト
+      'KeyL:KeyQ':'ぢ',  'KeyL:KeyW':'め', 'KeyL:KeyE':'け', 'KeyL:KeyR':'てぃ','KeyL:KeyT':'でぃ',
+      'KeyL:KeyA':'を',  'KeyL:KeyS':'さ', 'KeyL:KeyD':'お', 'KeyL:KeyF':'り',  'KeyL:KeyG':'ず',
+      'KeyL:KeyZ':'ぜ',  'KeyL:KeyX':'ざ', 'KeyL:KeyC':'ぎ', 'KeyL:KeyV':'ろ',  'KeyL:KeyB':'ぬ',
+      // S（左薬指）→ 右手キーをシフト
+      'KeyS:KeyY':'しぇ','KeyS:KeyU':'ぺ', 'KeyS:KeyI':'ど', 'KeyS:KeyO':'や',  'KeyS:KeyP':'じぇ',
+      'KeyS:KeyH':'び',  'KeyS:KeyJ':'ら', 'KeyS:Semicolon':'そ',
+      'KeyS:KeyN':'わ',  'KeyS:KeyM':'だ', 'KeyS:Comma':'ぴ','KeyS:Period':'ぽ','KeyS:Slash':'ちぇ',
+      // I（右人差し指）→ 左手キーで拗音
+      'KeyI:KeyQ':'ひゅ','KeyI:KeyW':'しゅ','KeyI:KeyE':'しょ','KeyI:KeyR':'きゅ','KeyI:KeyT':'ちゅ',
+      'KeyI:KeyA':'ひょ','KeyI:KeyF':'きょ','KeyI:KeyG':'ちょ',
+      'KeyI:KeyZ':'ひゃ','KeyI:KeyC':'しゃ','KeyI:KeyV':'きゃ','KeyI:KeyB':'ちゃ',
+      // O（右人差し指）→ 左手キーで拗音
+      'KeyO:KeyQ':'りゅ','KeyO:KeyW':'じゅ','KeyO:KeyE':'じょ','KeyO:KeyR':'ぎゅ','KeyO:KeyT':'にゅ',
+      'KeyO:KeyA':'りょ','KeyO:KeyF':'ぎょ','KeyO:KeyG':'にょ',
+      'KeyO:KeyZ':'りゃ','KeyO:KeyC':'じゃ','KeyO:KeyV':'ぎゃ','KeyO:KeyB':'にゃ',
+    },
+    homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
+    tutorial: [
+      { title: '新下駄配列とは',
+        body: '新下駄配列（作者：コウイ）は<b>中指・薬指シフト</b>方式です。<br>D/K/S/Lの4キーがシフトキーとして機能します。<br>親指キー（無変換・変換）は<b>使いません</b>。' },
+      { title: '4種のシフトキー',
+        body: '<b>D</b>（左中指）→ 右手のキーをシフト<br><b>K</b>（右中指）→ 左手のキーをシフト<br><b>S</b>（左薬指）→ 右手のキーをシフト<br><b>L</b>（右薬指）→ 左手のキーをシフト<br><br>左右の手をまたいで同時押し（クロスハンド）が基本です。' },
+      { title: '具体的な入力例',
+        body: '<b>あ</b> ＝ D＋J　<b>え</b> ＝ D＋;（セミコロン）<br><b>を</b> ＝ L＋A　<b>じ</b> ＝ K＋S<br><b>よ</b> ＝ D＋I　<b>ほ</b> ＝ K＋A<br><br>シフトキー自体も単打で入力できます：<br>D=か、K=い、S=と、L=し' },
+      { title: '練習の進め方',
+        body: '① <b>単打のみ</b>（レッスン3・4）でキー配置を覚える<br>② <b>K/Dシフト</b>（中指シフト）を追加練習<br>③ <b>L/Sシフト</b>（薬指シフト）を練習<br>④ <b>全シフト</b>でスムーズに打てるまで繰り返す' },
+    ],
   },
 };
 
@@ -783,8 +905,9 @@ function isKana(c) {
 
 function buildKanaMap() {
   KANA_MAP = {};
+  const slots = CL.thumbMode === 'finger' ? ['n'] : ['n','l','r'];
   for (const [code, e] of Object.entries(CL.keys)) {
-    for (const s of ['n','l','r']) {
+    for (const s of slots) {
       const ch = e[s];
       if (ch && isKana(ch)) KANA_MAP[ch] = { code, s };
     }
@@ -851,44 +974,173 @@ const TEXT_GROUPS = [
     title: '中央段のみ',
     desc:  'ホーム段キーだけで入力できる文章',
     texts: [
-      { title:'なかまたくさん',   text:'わたしのなかまたくさんいる' },
-      { title:'きのうのきおく',   text:'たのしいきのうのきおくいつかかたりたい' },
-      { title:'ゆきのさくら',     text:'ゆきのなかうつくしいさくらある' },
-      { title:'おおきなちから',   text:'おおきなちからのあるなかまいつかなりたい' },
-      { title:'うつくしいきおく', text:'うつくしいたのしいわたしのきおく' },
-      { title:'ゆきのなか',       text:'たくさんのゆきのなかわたしたちたたずんだ' },
-      { title:'ゆきのいろ',       text:'きのうのゆきのいろのうつくしさかたりたい' },
-      { title:'わかりあう',       text:'わかりあうなかまのたのしさかたりたい' },
+      { title:'なかまたくさん',     text:'わたしのなかまたくさんいる' },
+      { title:'きのうのきおく',     text:'たのしいきのうのきおくいつかかたりたい' },
+      { title:'ゆきのさくら',       text:'ゆきのなかうつくしいさくらある' },
+      { title:'おおきなちから',     text:'おおきなちからのあるなかまいつかなりたい' },
+      { title:'うつくしいきおく',   text:'うつくしいたのしいわたしのきおく' },
+      { title:'ゆきのなか',         text:'たくさんのゆきのなかわたしたちたたずんだ' },
+      { title:'ゆきのいろ',         text:'きのうのゆきのいろのうつくしさかたりたい' },
+      { title:'わかりあう',         text:'わかりあうなかまのたのしさかたりたい' },
+      { title:'たいせつなきおく',   text:'たいせつなきおくはいつまでもなくならない' },
+      { title:'なかまのちから',     text:'なかまのちからをかりてむずかしいことをなしとげた' },
+      { title:'まいにちのくらし',   text:'まいにちたのしいことをさがしてくらしたい' },
+      { title:'ゆたかなこころ',     text:'こころのゆたかさはなにものにもかえられない' },
     ]
   },
   {
     title: '日常会話',
     desc:  '日常でよく使う表現',
     texts: [
-      { title:'あいさつ①',     text:'こんにちはおげんきですか' },
-      { title:'あいさつ②',     text:'おはようございますきょうもよろしくおねがいします' },
-      { title:'ありがとう',     text:'ありがとうございますたいへんたすかりました' },
-      { title:'じこしょうかい', text:'わたしはにほんごをまいにちれんしゅうしています' },
-      { title:'せいかつ',       text:'まいあさはやくおきてかおをあらいごはんをたべます' },
-      { title:'きせつ',         text:'はるになるとさくらがさいてとてもきれいです' },
-      { title:'れんしゅう',     text:'まいにちれんしゅうするとだんだんはやくなります' },
-      { title:'しょくじ',       text:'すしやてんぷらやそばなどのにほんりょうりはおいしい' },
-      { title:'きもち',         text:'きれいなはなをみてとてもきもちがよくなりました' },
-      { title:'むかしばなし',   text:'むかしむかしあるところにおじいさんとおばあさんがいた' },
+      { title:'あいさつ①',         text:'こんにちはおげんきですか' },
+      { title:'あいさつ②',         text:'おはようございますきょうもよろしくおねがいします' },
+      { title:'ありがとう',         text:'ありがとうございますたいへんたすかりました' },
+      { title:'じこしょうかい',     text:'わたしはにほんごをまいにちれんしゅうしています' },
+      { title:'せいかつ',           text:'まいあさはやくおきてかおをあらいごはんをたべます' },
+      { title:'きせつ',             text:'はるになるとさくらがさいてとてもきれいです' },
+      { title:'れんしゅう',         text:'まいにちれんしゅうするとだんだんはやくなります' },
+      { title:'しょくじ',           text:'すしやてんぷらやそばなどのにほんりょうりはおいしい' },
+      { title:'きもち',             text:'きれいなはなをみてとてもきもちがよくなりました' },
+      { title:'むかしばなし',       text:'むかしむかしあるところにおじいさんとおばあさんがいた' },
+      { title:'おやすみ',           text:'おやすみなさいまたあしたたのしいいちにちにしましょう' },
+      { title:'みちをきく',         text:'すみませんちかくのえきへはどうやっていけますか' },
+      { title:'いいてんき',         text:'きょうはとてもいいてんきですねどこかおでかけですか' },
+      { title:'おみせ',             text:'このちかくにおいしいおみせがあったらおしえてください' },
+      { title:'てつだい',           text:'なにかてつだえることがあればえんりょなくいってください' },
+      { title:'まっていて',         text:'すこしまってくださいすぐにじゅんびができます' },
+      { title:'おもしろい本',       text:'このほんはとてもおもしろくてよるおそくまでよんでしまった' },
+      { title:'てがみ',             text:'ともだちにてがみをかいてきもちをつたえました' },
+      { title:'こどもたち',         text:'こどもたちはこうえんでたのしそうにあそんでいます' },
+      { title:'えいが',             text:'せんしゅうみたえいがはとてもかんどうてきでした' },
+      { title:'なつかしい友だち',   text:'むかしのともだちにひさしぶりにあってなつかしかった' },
+      { title:'やさしいひと',       text:'あのひとはいつもやさしくてまわりからしたわれています' },
+      { title:'たんじょうかい',     text:'らいしゅうともだちのたんじょうかいをきかくしています' },
+      { title:'なつのたのしみ',     text:'もうすぐなつがきますうみやまつりがとてもたのしみです' },
+      { title:'しごとおつかれ',     text:'きょうもいちにちおつかれさまでしたゆっくりやすんでね' },
+      { title:'かぞくのはなし',     text:'かぞくとすごすじかんはなによりもたいせつだとおもう' },
+      { title:'ねるまえに',         text:'ねるまえにすこしだけほんをよむのがまいにちのならわし' },
+      { title:'あさのじかん',       text:'あさのしずかなじかんにこーひーをのむのがすきです' },
+      { title:'しゅうまつ',         text:'こんどのしゅうまつはともだちとやまにのぼるよていです' },
+      { title:'てんきよほう',       text:'あしたはくもりのちゆきがふるらしいのでてまわしをしよう' },
     ]
   },
   {
-    title: 'ことわざ',
+    title: 'ことわざ・名言',
     desc:  'ことわざ・慣用句・名言',
     texts: [
-      { title:'ちりもつもれば', text:'ちりもつもればやまとなる' },
-      { title:'いしのうえ',     text:'いしのうえにもさんねん' },
-      { title:'はなよりだんご', text:'はなよりだんごというくらいじつようがたいせつだ' },
-      { title:'にどあること',   text:'にどあることはさんどある' },
-      { title:'はじめのいっぽ', text:'はじめのいっぽがいちばんたいせつ' },
-      { title:'くろうはかって', text:'わかいときのくろうはかってでもせよ' },
-      { title:'めいじん',       text:'うまれながらのめいじんはいない' },
-      { title:'ないそで',       text:'ないそではふれない' },
+      { title:'ちりもつもれば',     text:'ちりもつもればやまとなる' },
+      { title:'いしのうえ',         text:'いしのうえにもさんねん' },
+      { title:'はなよりだんご',     text:'はなよりだんごというくらいじつようがたいせつだ' },
+      { title:'にどあること',       text:'にどあることはさんどある' },
+      { title:'はじめのいっぽ',     text:'はじめのいっぽがいちばんたいせつ' },
+      { title:'くろうはかって',     text:'わかいときのくろうはかってでもせよ' },
+      { title:'めいじん',           text:'うまれながらのめいじんはいない' },
+      { title:'ないそで',           text:'ないそではふれない' },
+      { title:'のどもとすぎれば',   text:'のどもとすぎればあつさをわすれる' },
+      { title:'ひとのふり',         text:'ひとのふりみてわがふりなおせ' },
+      { title:'さるもき',           text:'さるもきからおちることがある' },
+      { title:'たなぼた',           text:'たなからぼたもちはなかなかおちてこない' },
+      { title:'なせばなる',         text:'なせばなるなさねばならぬなにごとも' },
+      { title:'かわいいこ',         text:'かわいいこにはたびをさせてそだてよ' },
+      { title:'あしたのかぜ',       text:'あしたはあしたのかぜがふく' },
+      { title:'いしばし',           text:'いしばしをたたいてわたるくらいなんどもかくにんする' },
+      { title:'まけるがかち',       text:'まけるがかちというこころがけをたいせつにしたい' },
+      { title:'ねこにこばん',       text:'ねこにこばんぶたにしんじゅものごとにはあいしょうがある' },
+      { title:'こうぼう',           text:'こうぼうにもふでのあやまりだれにでもしっぱいはある' },
+      { title:'じゅうにんといろ',   text:'じゅうにんといろだからこそせかいはおもしろい' },
+      { title:'けいぞく',           text:'なにごともけいぞくはちからなりあきらめなければみのる' },
+      { title:'そとみかけ',         text:'そとみかけだけでひとをはんだんするのはよくない' },
+      { title:'こころのゆたかさ',   text:'こころのゆたかさこそがほんとうのしあわせだ' },
+      { title:'たびはみちづれ',     text:'たびはみちづれよはなさけ' },
+      { title:'いちごいちえ',       text:'いちごいちえのこころでひとにせっすることがたいせつだ' },
+      { title:'うまいはなし',       text:'うまいはなしにはかならずうらがあるものだ' },
+      { title:'ともにあゆむ',       text:'ひとりでいくよりもなかまとともにあゆむほうがとおくまでいける' },
+      { title:'じぶんをしる',       text:'じぶんをよくしることがほかのひとをりかいするちかみちだ' },
+      { title:'ちいさなしあわせ',   text:'ちいさなしあわせをたいせつにすることでまいにちがゆたかになる' },
+      { title:'あきらめないこころ', text:'あきらめないこころがさいごにはおおきなちからになる' },
+    ]
+  },
+  {
+    title: '自然・季節',
+    desc:  '四季の風景・自然の描写',
+    texts: [
+      { title:'はるのひかり',       text:'はるのやわらかいひかりがさしてこころがほっとする' },
+      { title:'なつのあつさ',       text:'なつのあつさにまけずたのしいおもいでをつくろう' },
+      { title:'あきのよる',         text:'あきのよるはむしのこえがきれいでしずかなきもちになる' },
+      { title:'ふゆのあさ',         text:'ふゆのさむいあさはふとんからでるのにゆうきがいる' },
+      { title:'さくらふぶき',       text:'さくらのはなびらがかぜにまってちるさまがとてもうつくしい' },
+      { title:'あめのひ',           text:'あめがしとしとふってにわのくさがいきいきとしている' },
+      { title:'つきあかり',         text:'まんげつのつきがしずかなよるをやさしくてらしている' },
+      { title:'やまのけしき',       text:'たかいやまのいただきからみわたすけしきはすばらしい' },
+      { title:'なみのおと',         text:'うみのなみがよせてはかえすおとがこころをやすめてくれる' },
+      { title:'そよかぜ',           text:'きもちよいそよかぜがふいてきてなつのあつさをわすれた' },
+      { title:'ゆきのあさ',         text:'ゆきがしんしんとふりつもってあたりがしろくそまった' },
+      { title:'ほしぞら',           text:'くもひとつないよるのほしぞらがかがやいてとてもきれいだ' },
+      { title:'かえるのこえ',       text:'はるになるといけからかえるのこえがきこえてくる' },
+      { title:'さくらのかぜ',       text:'はるかぜにのってさくらのはなびらがひらひらとまう' },
+      { title:'もみじ',             text:'もみじのあかとつたのきいろがやまをいろどっている' },
+      { title:'なつのたいよう',     text:'なつのたいようがまぶしくてめをほそめてみあげた' },
+      { title:'かわのせせらぎ',     text:'やまのなかのかわのせせらぎがこころをなごませる' },
+      { title:'はるのうきうき',     text:'はるになるとなぜかこころがうきうきとしてくる' },
+      { title:'こたつのしあわせ',   text:'ふゆはこたつにはいってみかんをたべるのがさいこうだ' },
+      { title:'なつまつり',         text:'なつまつりのはなびがよぞらにひろがってとてもきれいだった' },
+      { title:'あさもや',           text:'あさのもやがたちこめるかわぞいをさんぽするのがすきだ' },
+      { title:'あきのそら',         text:'あきのたかいそらをみあげるといつもこころがすっきりする' },
+      { title:'ゆきあそび',         text:'こどものころゆきがふるとそとにとびだしてあそんだものだ' },
+      { title:'なつのあさ',         text:'なつのあさはとりのこえでめがさめてさわやかなきもちになる' },
+      { title:'はるのかおり',       text:'はるになるとはなのかおりがかぜにのってただよってくる' },
+    ]
+  },
+  {
+    title: '食べ物・料理',
+    desc:  '食事・料理・おいしいもの',
+    texts: [
+      { title:'たまごかけごはん',   text:'たまごかけごはんはかんたんでいちばんすきなあさごはんだ' },
+      { title:'おすし',             text:'たまにたべるおすしはとくべつなきもちがしてうれしい' },
+      { title:'おかあさんのりょうり',text:'おかあさんのてりょうりはどんなりょうりよりもおいしい' },
+      { title:'やさいいため',       text:'しんせんなやさいをいためてつくったりょうりがおいしかった' },
+      { title:'すいか',             text:'なつのあついひにつめたいすいかをたべるのがさいこうだ' },
+      { title:'おでん',             text:'さむいふゆのひはあたたかいおでんがこころもからだもあたためる' },
+      { title:'みそしる',           text:'あさのみそしるはにほんのこころのあじだとおもっている' },
+      { title:'ふわふわぱんけーき', text:'ふわふわのぱんけーきをつくってかぞくにたべさせた' },
+      { title:'うどん',             text:'さむいひにあたたかいうどんをたべるとほっとする' },
+      { title:'なっとう',           text:'なっとうはにおいがつよいがからだによいたべものだ' },
+      { title:'やきとり',           text:'ともだちとやきとりをたべながらはなしがもりあがった' },
+      { title:'そば',               text:'としのおわりにそばをたべてあたらしいとしをむかえる' },
+      { title:'おちゃ',             text:'あたたかいおちゃをゆっくりのみながらほっとするじかん' },
+      { title:'なべりょうり',       text:'ふゆはかぞくでなべりょうりをかこむのがたのしい' },
+      { title:'てんぷら',           text:'てんぷらをさくさくにあげるのはむずかしいがおいしい' },
+      { title:'おにぎり',           text:'たびのおともにはおにぎりがいちばんだとおもっている' },
+      { title:'ラーメン',           text:'さむいひにあつくてこくのあるらーめんをたべたくなる' },
+      { title:'いちごのケーキ',     text:'いちごがのったショートケーキはみんなをしあわせにする' },
+      { title:'やきざかな',         text:'あさごはんにやいたさかなとごはんがあれば十分だ' },
+      { title:'カレーライス',       text:'かれーらいすはにほんでいちばんすきなりょうりのひとつだ' },
+    ]
+  },
+  {
+    title: '旅行・お出かけ',
+    desc:  '旅先の風景・お出かけの思い出',
+    texts: [
+      { title:'はじめてのたび',     text:'はじめてひとりでりょこうしたときはどきどきしながらでかけた' },
+      { title:'うつくしいけしき',   text:'みたことのないうつくしいけしきをみてこころがひろがった' },
+      { title:'ふるいまちなみ',     text:'ふるいたてものがならぶまちをゆっくりさんぽするのがすきだ' },
+      { title:'しゃしん',           text:'たびさきのけしきやたべものをしゃしんにとってのこした' },
+      { title:'ちずをみながら',     text:'ちずをてにもってみしらぬまちをじぶんのあしであるいた' },
+      { title:'えきまえのしょくどう',text:'えきまえのちいさなしょくどうでとてもおいしいものをたべた' },
+      { title:'おみやげ',           text:'たびさきでかぞくやともだちへのおみやげをえらぶのがたのしい' },
+      { title:'またきたい',         text:'このまちはまたきたいとおもうほどすてきなばしょだった' },
+      { title:'たびさきのひと',     text:'たびさきでであったひとのやさしさにこころがあたたまった' },
+      { title:'でんしゃのたび',     text:'でんしゃのまどからながめるけしきがかわっていくのがすきだ' },
+      { title:'ひとりたび',         text:'ひとりたびはじぶんだけのじかんがあっていいものだ' },
+      { title:'あたらしいばしょ',   text:'あたらしいばしょにいくたびにわくわくするきもちになる' },
+      { title:'みなとのけしき',     text:'みなとにたってうみをみながらあたたかいものをのんだ' },
+      { title:'ゆうやけ',           text:'ゆうやけのそらがあかくそまるころにやどにもどった' },
+      { title:'たびのふろ',         text:'ながたびのつかれもわすれるほどきもちのいいふろだった' },
+      { title:'しんかんせん',       text:'しんかんせんにのってとおいまちへあそびにいくのがたのしみだ' },
+      { title:'こうえんさんぽ',     text:'ちかくのこうえんをぶらぶらあるくだけでもきもちがかわる' },
+      { title:'かいがいりょこう',   text:'はじめてかいがいにいったときのおどろきはいまでもわすれない' },
+      { title:'たびのにっき',       text:'たびのおもいでをにっきにかいておくとあとでよみかえすのがたのしい' },
+      { title:'もういちど',         text:'もういちどあのまちをたずねてみたいといつもおもっている' },
     ]
   },
   {
@@ -906,7 +1158,7 @@ const S = {
   lessonIdx: 0,
   textGroupIdx: 0,
   sessionSize: 20,
-  textSize: 30,
+  textSize: 5,
   textSegs: [],
   showHint: true,
   soundOn: true,
@@ -973,6 +1225,7 @@ function buildKeyboard() {
   for (const k of Object.keys(KEL)) delete KEL[k];
 
   const isCenter = CL.thumbMode === 'center';
+  const isFinger = CL.thumbMode === 'finger';
 
   for (const row of KB_ROWS) {
     const div = document.createElement('div');
@@ -985,7 +1238,7 @@ function buildKeyboard() {
       if (!e || (!e.n && !e.l && !e.r)) {
         k.className = 'kb-key kb-empty';
         k.innerHTML = `<span class="kb-phys">${PHYS[code]||''}</span>`;
-      } else if (isCenter) {
+      } else if (isCenter || isFinger) {
         k.className = 'kb-key cs';
         k.innerHTML =
           `<span class="kb-phys">${PHYS[code]||''}</span>` +
@@ -1010,36 +1263,56 @@ function buildKeyboard() {
   const tr = document.createElement('div');
   tr.className = 'kb-row';
 
-  const muhan = document.createElement('div');
-  muhan.className = 'kb-key k-thumb';
-  muhan.dataset.code = 'NonConvert';
-  muhan.innerHTML = isCenter
-    ? 'シフト<small>無変換</small>'
-    : '無変換<small>左親指</small>';
-  KEL['NonConvert'] = muhan;
+  if (isFinger) {
+    // Finger-shift mode: show shift key info instead of thumb keys
+    const lbl = document.createElement('div');
+    lbl.className = 'kb-key k-thumb';
+    lbl.style.width = '180px';
+    lbl.innerHTML = 'D(中指)→右シフト<br><small>S(薬指)→右シフト</small>';
+    const sp = document.createElement('div');
+    sp.className = 'kb-key k-space';
+    sp.textContent = 'Space';
+    const rbl = document.createElement('div');
+    rbl.className = 'kb-key k-thumb';
+    rbl.style.width = '180px';
+    rbl.innerHTML = 'K(中指)→左シフト<br><small>L(薬指)→左シフト</small>';
+    tr.appendChild(lbl); tr.appendChild(sp); tr.appendChild(rbl);
+    // Mark shift trigger keys
+    for (const code of (CL.fingerShiftKeys || [])) {
+      KEL[code]?.classList.add('k-shift-trigger');
+    }
+  } else {
+    const muhan = document.createElement('div');
+    muhan.className = 'kb-key k-thumb';
+    muhan.dataset.code = 'NonConvert';
+    muhan.innerHTML = isCenter
+      ? 'シフト<small>無変換</small>'
+      : '無変換<small>左親指</small>';
+    KEL['NonConvert'] = muhan;
 
-  const spaceKey = document.createElement('div');
-  spaceKey.className = 'kb-key k-space';
-  spaceKey.textContent = 'Space';
+    const spaceKey = document.createElement('div');
+    spaceKey.className = 'kb-key k-space';
+    spaceKey.textContent = 'Space';
 
-  const henko = document.createElement('div');
-  henko.className = 'kb-key k-thumb';
-  henko.dataset.code = 'Convert';
-  henko.innerHTML = isCenter
-    ? 'シフト<small>変換</small>'
-    : '変換<small>右親指</small>';
-  KEL['Convert'] = henko;
+    const henko = document.createElement('div');
+    henko.className = 'kb-key k-thumb';
+    henko.dataset.code = 'Convert';
+    henko.innerHTML = isCenter
+      ? 'シフト<small>変換</small>'
+      : '変換<small>右親指</small>';
+    KEL['Convert'] = henko;
 
-  tr.appendChild(muhan);
-  tr.appendChild(spaceKey);
-  tr.appendChild(henko);
+    tr.appendChild(muhan); tr.appendChild(spaceKey); tr.appendChild(henko);
+  }
   kb.appendChild(tr);
 
   // Update thumb indicators in practice screen
   const indL = document.getElementById('ind-l');
   const indR = document.getElementById('ind-r');
-  if (indL) indL.textContent = isCenter ? 'シフト（無変換）' : '無変換 ← 左親指';
-  if (indR) indR.textContent = isCenter ? 'シフト（変換）'   : '右親指 → 変換';
+  if (indL) indL.textContent = isFinger ? 'D(中指)→右手シフト / S(薬指)→右手シフト'
+                               : isCenter ? 'シフト（無変換）' : '無変換 ← 左親指';
+  if (indR) indR.textContent = isFinger ? 'K(中指)→左手シフト / L(薬指)→左手シフト'
+                               : isCenter ? 'シフト（変換）'   : '右親指 → 変換';
 }
 
 function renderKB() {
@@ -1158,20 +1431,21 @@ function startTextGroup(groupIdx) {
     ? TEXT_GROUPS.filter(g => !g.all).flatMap(g => g.texts)
     : group.texts;
 
-  const shuffled = shuffle([...pool]);
-  let roundBuf = [...shuffled];
+  let roundBuf = shuffle([...pool]);
   const queue = [];
   const segs = [];
 
-  while (queue.length < S.textSize) {
+  // S.textSize = number of complete texts (sentences) to practice
+  let taken = 0;
+  while (taken < S.textSize) {
     if (!roundBuf.length) roundBuf = shuffle([...pool]);
     const txt = roundBuf.shift();
     const filtered = [...txt.text].filter(c => KANA_MAP[c]);
     if (!filtered.length) continue;
     const startInQueue = queue.length;
-    const toTake = Math.min(filtered.length, S.textSize - queue.length);
-    queue.push(...filtered.slice(0, toTake));
-    segs.push({ title: txt.title, text: txt.text, filteredChars: filtered.slice(0, toTake), startInQueue });
+    queue.push(...filtered);
+    segs.push({ title: txt.title, text: txt.text, filteredChars: filtered, startInQueue });
+    taken++;
   }
 
   S.mode = 'text';
@@ -1206,8 +1480,17 @@ function nextChallenge() {
   S.tStart   = 0;
 
   const n = S.queue.length;
-  document.getElementById('prac-prog').textContent = `${S.pos + 1} / ${n}`;
-  document.getElementById('pbar').style.width = `${(S.pos / n) * 100}%`;
+  if (S.mode === 'text') {
+    let si = 0;
+    for (let i = 0; i < S.textSegs.length; i++) {
+      if (S.pos >= S.textSegs[i].startInQueue) si = i;
+    }
+    document.getElementById('prac-prog').textContent = `テキスト ${si + 1} / ${S.textSegs.length}`;
+    document.getElementById('pbar').style.width = `${(si / S.textSegs.length) * 100}%`;
+  } else {
+    document.getElementById('prac-prog').textContent = `${S.pos + 1} / ${n}`;
+    document.getElementById('pbar').style.width = `${(S.pos / n) * 100}%`;
+  }
   document.getElementById('tgt-kana').textContent = S.tgtKana;
   document.getElementById('cbox').classList.remove('ok','err');
 
@@ -1367,6 +1650,7 @@ function onKeyDown(e) {
 
   // ── Thumb / shift keys ─────────────────────────────────────────────────────
   if (code === 'NonConvert' || code === 'Convert') {
+    if (CL.thumbMode === 'finger') { e.preventDefault(); return; }
     e.preventDefault();
     S.heldKeys.add(code);
 
@@ -1441,6 +1725,7 @@ function resolveThumbShift(thumbCode) {
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
   if (e.code === 'NonConvert' || e.code === 'Convert') {
+    if (CL.thumbMode === 'finger') { e.preventDefault(); return; }
     e.preventDefault();
     if (!(CL.thumbMode === 'center' && (S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert')))) {
       S.pendingThumb = null;
@@ -1467,6 +1752,8 @@ function renderMenu() {
   document.getElementById('menu-subtitle').textContent =
     CL.thumbMode === 'center'
       ? 'PCキーボード必須　／　シフト: 無変換 または 変換'
+      : CL.thumbMode === 'finger'
+      ? 'PCキーボード必須　／　中指シフト: D(→右)/K(→左)　薬指シフト: S(→右)/L(→左)'
       : 'PCキーボード必須　／　左親指シフト: 無変換　／　右親指シフト: 変換';
 
   // ── Random lessons ──
@@ -1714,6 +2001,41 @@ function toggleSound() {
   S.soundOn = !S.soundOn;
   document.getElementById('sound-lbl').textContent = S.soundOn ? 'ON' : 'OFF';
   try { localStorage.setItem('a123_sound', S.soundOn ? '1' : '0'); } catch(_) {}
+}
+
+// ── Tutorial ──────────────────────────────────────────────────────────────────
+let _tutIdx = 0;
+
+function openTutorial() {
+  const slides = CL.tutorial;
+  if (!slides || !slides.length) return;
+  _tutIdx = 0;
+  renderTutSlide();
+  const ov = document.getElementById('tut-overlay');
+  ov.style.display = 'flex';
+}
+
+function closeTutorial() {
+  document.getElementById('tut-overlay').style.display = 'none';
+}
+
+function tutNav(dir) {
+  const slides = CL.tutorial || [];
+  _tutIdx = Math.max(0, Math.min(slides.length - 1, _tutIdx + dir));
+  renderTutSlide();
+}
+
+function renderTutSlide() {
+  const slides = CL.tutorial || [];
+  const slide = slides[_tutIdx];
+  document.getElementById('tut-step').textContent  = `${_tutIdx + 1} / ${slides.length}`;
+  document.getElementById('tut-title').textContent = slide.title;
+  document.getElementById('tut-body').innerHTML    = slide.body;
+  document.getElementById('tut-prev').disabled = _tutIdx === 0;
+  document.getElementById('tut-next').textContent = _tutIdx === slides.length - 1 ? '閉じる' : '次へ →';
+  document.getElementById('tut-next').onclick = _tutIdx === slides.length - 1
+    ? closeTutorial
+    : () => tutNav(1);
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
