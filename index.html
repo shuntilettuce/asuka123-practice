@@ -212,7 +212,19 @@
       margin-bottom: 10px;
     }
 
-    .hint-text { font-size: 0.88rem; color: var(--text-dim); min-height: 22px; }
+    .hint-text {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      min-height: 22px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .text-ctx-box.text-large {
+      font-size: 1.7rem;
+      line-height: 2.1;
+      padding: 18px 22px;
+    }
     .hk {
       display: inline-block;
       background: var(--key-bg);
@@ -434,8 +446,8 @@
 
   <div class="challenge-box" id="cbox">
     <div class="target-kana" id="tgt-kana">　</div>
-    <div class="hint-text" id="hint"></div>
   </div>
+  <div class="hint-text" id="hint"></div>
 
   <div class="thumb-row">
     <div class="thumb-ind" id="ind-l">無変換 ← 左親指</div>
@@ -762,7 +774,10 @@ function startLesson(idx) {
 
   document.getElementById('prac-title').textContent = `レッスン${idx+1}: ${lesson.title}`;
   document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
-  document.getElementById('text-ctx').style.display = 'none';
+  const tc = document.getElementById('text-ctx');
+  tc.style.display = 'none';
+  tc.classList.remove('text-large');
+  document.getElementById('cbox').style.display = '';
   showScreen('practice');
   if (document.activeElement) document.activeElement.blur();
   nextChallenge();
@@ -802,7 +817,10 @@ function startTextGroup(groupIdx) {
 
   document.getElementById('prac-title').textContent = `文章練習: ${group.title}`;
   document.getElementById('hint-lbl').textContent = 'ON';
-  document.getElementById('text-ctx').style.display = '';
+  const tc2 = document.getElementById('text-ctx');
+  tc2.style.display = '';
+  tc2.classList.add('text-large');
+  document.getElementById('cbox').style.display = 'none';
   showScreen('practice');
   if (document.activeElement) document.activeElement.blur();
   nextChallenge();
@@ -1071,6 +1089,7 @@ function toggleHint() {
   S.showHint = !S.showHint;
   document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
   updateHint();
+  renderKB();
 }
 
 // ── localStorage ──────────────────────────────────────────────────────────────
