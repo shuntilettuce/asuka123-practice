@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>飛鳥123 練習</title>
+  <title>親指シフト系 かな入力 練習</title>
   <style>
     :root {
       --bg: #1a1a2e;
@@ -44,11 +44,46 @@
     .subtitle {
       color: var(--text-dim);
       font-size: 0.82rem;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       text-align: center;
     }
 
     .screen { width: 100%; max-width: 860px; }
+
+    /* ── Layout selector ── */
+    .layout-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .layout-btn {
+      padding: 6px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--key-border);
+      background: var(--key-bg);
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+      transition: all 0.12s;
+    }
+    .layout-btn:hover { border-color: var(--purple); color: var(--text); }
+    .layout-btn.active {
+      background: var(--purple);
+      border-color: var(--purple);
+      color: #1a1a2e;
+      font-weight: bold;
+    }
+    .layout-desc {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 14px;
+      padding: 6px 10px;
+      background: var(--surface);
+      border-radius: 6px;
+      border-left: 3px solid var(--purple);
+    }
 
     /* ── Menu ── */
     .size-row {
@@ -136,10 +171,7 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .text-len {
-      font-size: 0.68rem;
-      color: var(--text-dim);
-    }
+    .text-len { font-size: 0.68rem; color: var(--text-dim); }
 
     /* ── Practice ── */
     .prac-header {
@@ -165,7 +197,6 @@
       transition: width 0.25s;
     }
 
-    /* Text context (文章練習用) */
     .text-ctx-box {
       background: var(--surface);
       border: 1px solid var(--key-border);
@@ -177,7 +208,7 @@
       margin-bottom: 10px;
     }
     .tc-done { color: var(--text-dim); }
-    .tc-cur  {
+    .tc-cur {
       color: var(--yellow);
       font-weight: bold;
       background: #2d2b15;
@@ -304,6 +335,12 @@
       line-height: 1;
     }
 
+    /* center-shift layout: shift char in top-right */
+    .kb-key.cs .kb-r {
+      top: 3px; bottom: auto;
+      left: auto; right: 4px;
+    }
+
     .kb-key.tgt { border-color: var(--yellow) !important; background: #2d2b15 !important; }
     .kb-key.tgt.m-n .kb-n { color: var(--yellow); font-size: 1.2rem; }
     .kb-key.tgt.m-l .kb-l { color: var(--yellow); font-size: 0.75rem; font-weight: bold; }
@@ -314,6 +351,26 @@
 
     .kb-key.fl-ok  { background: #0f3020 !important; border-color: var(--green) !important; }
     .kb-key.fl-err { background: #3a1010 !important; border-color: var(--red)   !important; }
+
+    /* Combo modifier key (e.g. 薙刀式 T/Y keys) */
+    .kb-key.kb-combo {
+      border-color: var(--red);
+      background: #2a0a0a;
+    }
+    .kb-key.kb-combo .kb-n {
+      font-size: 0.65rem;
+      color: var(--red);
+    }
+    .kb-key.kb-combo.tgt {
+      border-color: var(--yellow) !important;
+      background: #2d2b15 !important;
+    }
+    .kb-key.kb-combo.tgt .kb-n { color: var(--yellow); }
+
+    /* Empty key (no kana in current layout) */
+    .kb-key.kb-empty {
+      opacity: 0.3;
+    }
 
     .kb-key.k-thumb {
       width: 76px; height: 38px;
@@ -405,8 +462,15 @@
 
 <!-- ══════════ MENU ══════════ -->
 <div id="screen-menu" class="screen">
-  <h1>飛鳥123 練習</h1>
-  <p class="subtitle">PCキーボード必須　／　左親指シフト: <b>無変換</b>　／　右親指シフト: <b>変換</b></p>
+  <h1 id="menu-title">かな入力 練習</h1>
+  <p class="subtitle" id="menu-subtitle"></p>
+
+  <div class="layout-row" id="layout-row">
+    <button class="layout-btn" data-lid="asuka123" onclick="switchLayout('asuka123')">飛鳥123</button>
+    <button class="layout-btn" data-lid="nicola"   onclick="switchLayout('nicola')">NICOLA</button>
+    <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v16</button>
+  </div>
+  <p class="layout-desc" id="layout-desc"></p>
 
   <div class="size-row">
     問題数（ランダム練習）:
@@ -485,43 +549,7 @@
 <script>
 'use strict';
 
-// ── Key layout (飛鳥123) ──────────────────────────────────────────────────────
-const LAYOUT = {
-  KeyQ: { n:'「', l:'ぱ', r:'（' },
-  KeyW: { n:'ー', l:'え', r:'べ' },
-  KeyE: { n:'じ', l:'ね', r:'れ' },
-  KeyR: { n:'ぴ', l:'ぁ', r:'ぺ' },
-  KeyT: { n:'%',  l:'ぅ', r:'&'  },
-  KeyY: { n:'－', l:'ぇ', r:'ぢ' },
-  KeyU: { n:'・', l:'ぃ', r:'～' },
-  KeyI: { n:'と', l:'よ', r:'そ' },
-  KeyO: { n:'は', l:'ふ', r:'こ' },
-  KeyP: { n:'ぽ', l:'！', r:'ぞ' },
-  BracketLeft: { n:'」', l:'）', r:'ご' },
-
-  KeyA: { n:'き', l:'だ', r:'わ' },
-  KeyS: { n:'し', l:'ち', r:'お' },
-  KeyD: { n:'う', l:'あ', r:'な' },
-  KeyF: { n:'て', l:'り', r:'ら' },
-  KeyG: { n:'ぎ', l:'ぉ', r:'づ' },
-  KeyH: { n:'ゆ', l:'ず', r:'ぬ' },
-  KeyJ: { n:'ん', l:'る', r:'く' },
-  KeyK: { n:'い', l:'す', r:'の' },
-  KeyL: { n:'か', l:'ま', r:'つ' },
-  Semicolon: { n:'た', l:'で', r:'さ' },
-  Quote:     { n:'ほ', l:'げ', r:'ろ' },
-
-  KeyZ: { n:'ば', l:'ぜ', r:'ぷ' },
-  KeyX: { n:'け', l:'ひ', r:'ぐ' },
-  KeyC: { n:'に', l:'せ', r:'み' },
-  KeyV: { n:'ぶ', l:'び', r:'ざ' },
-  KeyB: { n:'へ', l:'ヴ', r:'＊' },
-  KeyN: { n:'ゃ', l:'や', r:'む' },
-  KeyM: { n:'っ', l:'が', r:'を' },
-  Comma:  { n:'ょ', l:'、', r:'ど' },
-  Period: { n:'ゅ', l:'。', r:'も' },
-  Slash:  { n:'め', l:'？', r:'ぼ' },
-};
+// ── Layout definitions ────────────────────────────────────────────────────────
 
 const PHYS = {
   KeyQ:'Q', KeyW:'W', KeyE:'E', KeyR:'R', KeyT:'T',
@@ -532,41 +560,243 @@ const PHYS = {
   KeyN:'N', KeyM:'M', Comma:',', Period:'.', Slash:'/',
 };
 
-const KANA_MAP = {};
-for (const [code, e] of Object.entries(LAYOUT)) {
-  for (const s of ['n','l','r']) {
-    if (e[s]) KANA_MAP[e[s]] = { code, s };
-  }
-}
+const LAYOUTS = {
 
-const isKana = c => {
+  // ── 飛鳥123 ──────────────────────────────────────────────────────────────
+  asuka123: {
+    name: '飛鳥123',
+    desc: '親指シフト系 かな配列。左親指: 無変換、右親指: 変換',
+    thumbMode: 'lr',
+    keys: {
+      KeyQ: { n:'「', l:'ぱ', r:'（' },
+      KeyW: { n:'ー', l:'え', r:'べ' },
+      KeyE: { n:'じ', l:'ね', r:'れ' },
+      KeyR: { n:'ぴ', l:'ぁ', r:'ぺ' },
+      KeyT: { n:'%',  l:'ぅ', r:'&'  },
+      KeyY: { n:'－', l:'ぇ', r:'ぢ' },
+      KeyU: { n:'・', l:'ぃ', r:'～' },
+      KeyI: { n:'と', l:'よ', r:'そ' },
+      KeyO: { n:'は', l:'ふ', r:'こ' },
+      KeyP: { n:'ぽ', l:'！', r:'ぞ' },
+      BracketLeft: { n:'」', l:'）', r:'ご' },
+      KeyA: { n:'き', l:'だ', r:'わ' },
+      KeyS: { n:'し', l:'ち', r:'お' },
+      KeyD: { n:'う', l:'あ', r:'な' },
+      KeyF: { n:'て', l:'り', r:'ら' },
+      KeyG: { n:'ぎ', l:'ぉ', r:'づ' },
+      KeyH: { n:'ゆ', l:'ず', r:'ぬ' },
+      KeyJ: { n:'ん', l:'る', r:'く' },
+      KeyK: { n:'い', l:'す', r:'の' },
+      KeyL: { n:'か', l:'ま', r:'つ' },
+      Semicolon: { n:'た', l:'で', r:'さ' },
+      Quote:     { n:'ほ', l:'げ', r:'ろ' },
+      KeyZ: { n:'ば', l:'ぜ', r:'ぷ' },
+      KeyX: { n:'け', l:'ひ', r:'ぐ' },
+      KeyC: { n:'に', l:'せ', r:'み' },
+      KeyV: { n:'ぶ', l:'び', r:'ざ' },
+      KeyB: { n:'へ', l:'ヴ', r:'＊' },
+      KeyN: { n:'ゃ', l:'や', r:'む' },
+      KeyM: { n:'っ', l:'が', r:'を' },
+      Comma:  { n:'ょ', l:'、', r:'ど' },
+      Period: { n:'ゅ', l:'。', r:'も' },
+      Slash:  { n:'め', l:'？', r:'ぼ' },
+    },
+    homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'],
+  },
+
+  // ── NICOLA（親指シフト / JIS X 6004） ────────────────────────────────────
+  nicola: {
+    name: 'NICOLA',
+    desc: '親指シフト配列（JIS X 6004）。左親指: 無変換、右親指: 変換',
+    thumbMode: 'lr',
+    keys: {
+      KeyQ: { n:'',   l:'ぁ', r:''   },
+      KeyW: { n:'か', l:'え', r:'が' },
+      KeyE: { n:'た', l:'り', r:'だ' },
+      KeyR: { n:'こ', l:'ゃ', r:'ご' },
+      KeyT: { n:'さ', l:'れ', r:'ざ' },
+      KeyY: { n:'ら', l:'ぱ', r:'よ' },
+      KeyU: { n:'ち', l:'ぢ', r:'に' },
+      KeyI: { n:'く', l:'ぐ', r:'る' },
+      KeyO: { n:'つ', l:'づ', r:'ま' },
+      KeyP: { n:'',   l:'ぴ', r:'ぇ' },
+      KeyA: { n:'う', l:'を', r:'ヴ' },
+      KeyS: { n:'し', l:'あ', r:'じ' },
+      KeyD: { n:'て', l:'な', r:'で' },
+      KeyF: { n:'け', l:'ゅ', r:'げ' },
+      KeyG: { n:'せ', l:'も', r:'ぜ' },
+      KeyH: { n:'は', l:'ば', r:'み' },
+      KeyJ: { n:'と', l:'ど', r:'お' },
+      KeyK: { n:'き', l:'ぎ', r:'の' },
+      KeyL: { n:'い', l:'ぽ', r:'ょ' },
+      Semicolon: { n:'ん', l:'',  r:'っ' },
+      KeyZ: { n:'',   l:'ぅ', r:''   },
+      KeyX: { n:'ひ', l:'ー', r:'び' },
+      KeyC: { n:'す', l:'ろ', r:'ず' },
+      KeyV: { n:'ふ', l:'や', r:'ぶ' },
+      KeyB: { n:'へ', l:'ぃ', r:'べ' },
+      KeyN: { n:'め', l:'ぷ', r:'ぬ' },
+      KeyM: { n:'そ', l:'ぞ', r:'ゆ' },
+      Comma:  { n:'ね', l:'ぺ', r:'む' },
+      Period: { n:'ほ', l:'ぼ', r:'わ' },
+      Slash:  { n:'',   l:'',   r:'ぉ' },
+    },
+    homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
+  },
+
+  // ── 薙刀式 v16快速版 ─────────────────────────────────────────────────────
+  // center shift: 無変換・変換どちらでもシフト (l === r)
+  // 濁音・半濁音は2キー同時打鍵（クロスハンド）:
+  //   濁音 : F(か) または J(あ) を反対側のキーと同時押し
+  //   半濁音: B(そ) または M(な) を反対側のキーと同時押し
+  naginata: {
+    name: '薙刀式 v16',
+    desc: 'センターシフト配列。シフト: 無変換 or 変換。濁音・半濁音は2キー同時打鍵',
+    thumbMode: 'center',
+    // comboMap: 'key1:key2' → voiced kana  (bidirectional match)
+    comboMap: {
+      // ── 濁音 (F=か or J=あ をクロスで押す) ───────────────────────────
+      'KeyF:KeyJ':      'が',  // か＋あ
+      'KeyJ:KeyW':      'ぎ',  // あ＋き
+      'KeyF:KeyH':      'ぐ',  // か＋く
+      'KeyJ:KeyS':      'げ',  // あ＋け
+      'KeyJ:KeyV':      'ご',  // あ＋こ
+      'KeyF:KeyU':      'ざ',  // か＋[さ]
+      'KeyJ:KeyR':      'じ',  // あ＋し
+      'KeyF:KeyO':      'ず',  // か＋す
+      'KeyJ:KeyA':      'ぜ',  // あ＋ろ → ぜ
+      'KeyJ:KeyB':      'ぞ',  // あ＋そ
+      'KeyF:KeyN':      'だ',  // か＋た
+      'KeyJ:KeyG':      'ぢ',  // あ＋っ → ぢ
+      'KeyF:KeyL':      'づ',  // か＋う → づ
+      'KeyJ:KeyE':      'で',  // あ＋て
+      'KeyJ:KeyD':      'ど',  // あ＋と
+      'KeyJ:KeyC':      'ば',  // あ＋は
+      'KeyJ:KeyX':      'び',  // あ＋ひ
+      'KeyF:Semicolon': 'ぶ',  // か＋ー → ぶ
+      'KeyF:KeyP':      'べ',  // か＋へ
+      'KeyJ:KeyZ':      'ぼ',  // あ＋ほ
+      // ── 半濁音 (B=そ or M=な をクロスで押す) ─────────────────────────
+      'KeyM:KeyC':      'ぱ',  // な＋は
+      'KeyM:KeyX':      'ぴ',  // な＋ひ
+      'KeyB:Semicolon': 'ぷ',  // そ＋ー → ぷ
+      'KeyB:KeyP':      'ぺ',  // そ＋へ
+      'KeyM:KeyZ':      'ぽ',  // な＋ほ
+    },
+    keys: {
+      // Upper row (Q, T, Y, BracketLeft, Quote: unassigned)
+      KeyW: { n:'き', l:'ぬ', r:'ぬ' },
+      KeyE: { n:'て', l:'り', r:'り' },
+      KeyR: { n:'し', l:'め', r:'め' },
+      KeyU: { n:'',   l:'さ', r:'さ' },
+      KeyI: { n:'る', l:'よ', r:'よ' },
+      KeyO: { n:'す', l:'え', r:'え' },
+      KeyP: { n:'へ', l:'ゆ', r:'ゆ' },
+      // Home row
+      KeyA: { n:'ろ', l:'せ', r:'せ' },
+      KeyS: { n:'け', l:'み', r:'み' },
+      KeyD: { n:'と', l:'に', r:'に' },
+      KeyF: { n:'か', l:'ま', r:'ま' },
+      KeyG: { n:'っ', l:'ち', r:'ち' },
+      KeyH: { n:'く', l:'や', r:'や' },
+      KeyJ: { n:'あ', l:'の', r:'の' },
+      KeyK: { n:'い', l:'も', r:'も' },
+      KeyL: { n:'う', l:'つ', r:'つ' },
+      Semicolon: { n:'ー', l:'ふ', r:'ふ' },
+      // Lower row
+      KeyZ: { n:'ほ', l:'',   r:''   },
+      KeyX: { n:'ひ', l:'',   r:''   },
+      KeyC: { n:'は', l:'を', r:'を' },
+      KeyV: { n:'こ', l:'',   r:''   },
+      KeyB: { n:'そ', l:'む', r:'む' },
+      KeyN: { n:'た', l:'お', r:'お' },
+      KeyM: { n:'な', l:'',   r:''   },
+      Comma:  { n:'ん', l:'ね', r:'ね' },
+      Period: { n:'ら', l:'わ', r:'わ' },
+      Slash:  { n:'れ', l:'',   r:''   },
+    },
+    homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
+  },
+};
+
+// ── Dynamic layout state ──────────────────────────────────────────────────────
+let CL = null;         // current layout object
+let KANA_MAP = {};     // kana → { code, s }  (s: 'n'|'l'|'r'|'combo')
+let LESSONS = [];
+
+function isKana(c) {
   if (!c) return false;
   const cp = c.codePointAt(0);
   return (cp >= 0x3041 && cp <= 0x3096) ||
          (cp >= 0x30A1 && cp <= 0x30FA) ||
          cp === 0x30FC;
-};
+}
 
-// ── Lessons（全シフト優先） ───────────────────────────────────────────────────
-const HOME_N = ['き','し','う','て','ぎ','ゆ','ん','い','か','た'];
-const HOME_L = ['だ','ち','あ','り','ぉ','ず','る','す','ま','で'];
-const HOME_R = ['わ','お','な','ら','づ','ぬ','く','の','つ','さ'];
+function buildKanaMap() {
+  KANA_MAP = {};
+  for (const [code, e] of Object.entries(CL.keys)) {
+    for (const s of ['n','l','r']) {
+      const ch = e[s];
+      if (ch && isKana(ch)) KANA_MAP[ch] = { code, s };
+    }
+  }
+  // Combo entries (voiced sounds)
+  if (CL.comboMap) {
+    for (const [combo, kana] of Object.entries(CL.comboMap)) {
+      if (!kana || !isKana(kana)) continue;
+      const idx = combo.indexOf(':');
+      const comboCode = combo.slice(0, idx);
+      const mainCode  = combo.slice(idx + 1);
+      KANA_MAP[kana] = { code: mainCode, s: 'combo', comboCode };
+    }
+  }
+}
 
-const allN = [...new Set(Object.values(LAYOUT).map(e=>e.n).filter(isKana))];
-const allL = [...new Set(Object.values(LAYOUT).map(e=>e.l).filter(isKana))];
-const allR = [...new Set(Object.values(LAYOUT).map(e=>e.r).filter(isKana))];
+function buildLessons() {
+  const homeRow = CL.homeRow || [];
+  const allKana = Object.keys(KANA_MAP);
 
-const LESSONS = [
-  // 全シフト（メイン）
-  { title:'ホーム段（全シフト）', chars:[...HOME_N,...HOME_L,...HOME_R], primary:true },
-  { title:'全キー（全シフト）',   chars:[...allN,...allL,...allR],       primary:true },
-  // 通常のみ（補助）
-  { title:'ホーム段（通常のみ）', chars: HOME_N, primary:false },
-  { title:'全キー（通常のみ）',   chars: allN,   primary:false },
-];
+  // Home row: normal only
+  const homeN = homeRow
+    .map(c => CL.keys[c]?.n)
+    .filter(isKana);
+
+  // Home row: all (normal + shift + voiced combos on home row keys)
+  const homeAll = [...new Set([
+    ...homeRow.map(c => CL.keys[c]?.n).filter(isKana),
+    ...homeRow.map(c => CL.keys[c]?.l).filter(isKana),
+    ...homeRow.map(c => CL.keys[c]?.r).filter(isKana),
+    ...(CL.comboMap
+      ? Object.entries(CL.comboMap)
+          .filter(([k]) => homeRow.includes(k.slice(k.indexOf(':') + 1)))
+          .map(([, v]) => v)
+          .filter(isKana)
+      : []),
+  ])];
+
+  // All normal only
+  const allN = [...new Set(
+    Object.values(CL.keys).map(e => e.n).filter(isKana)
+  )];
+
+  LESSONS = [
+    { title: 'ホーム段（全シフト）', chars: homeAll, primary: true  },
+    { title: '全キー（全シフト）',   chars: allKana, primary: true  },
+    { title: 'ホーム段（通常のみ）', chars: homeN,   primary: false },
+    { title: '全キー（通常のみ）',   chars: allN,    primary: false },
+  ];
+}
+
+function switchLayout(id) {
+  S.layoutId = id;
+  CL = LAYOUTS[id];
+  buildKanaMap();
+  buildLessons();
+  buildKeyboard();
+  renderMenu();
+}
 
 // ── 文章練習テキスト ──────────────────────────────────────────────────────────
-// 中央段のみ: A/S/D/F/G/H/J/K/L/;/' の文字だけで構成（全て検証済み）
 const TEXT_GROUPS = [
   {
     title: '中央段のみ',
@@ -622,12 +852,13 @@ const TEXT_GROUPS = [
 // ── State ─────────────────────────────────────────────────────────────────────
 const S = {
   screen: 'menu',
-  mode: 'random',      // 'random' | 'text'
+  layoutId: 'asuka123',
+  mode: 'random',
   lessonIdx: 0,
   textGroupIdx: 0,
   sessionSize: 20,
   textSize: 30,
-  textSegs: [],        // [{title,text,filteredChars,startInQueue}]
+  textSegs: [],
   showHint: true,
 
   queue: [], pos: 0,
@@ -655,33 +886,53 @@ const KEL = {};
 function buildKeyboard() {
   const kb = document.getElementById('keyboard');
   kb.innerHTML = '';
+  // Clear old references
+  for (const k of Object.keys(KEL)) delete KEL[k];
+
+  const isCenter = CL.thumbMode === 'center';
 
   for (const row of KB_ROWS) {
     const div = document.createElement('div');
     div.className = 'kb-row';
     for (const code of row) {
-      const e = LAYOUT[code];
+      const e = CL.keys[code];
       const k = document.createElement('div');
-      k.className = 'kb-key';
       k.dataset.code = code;
-      k.innerHTML =
-        `<span class="kb-phys">${PHYS[code]}</span>` +
-        `<span class="kb-l">${e.l}</span>` +
-        `<span class="kb-n">${e.n}</span>` +
-        `<span class="kb-r">${e.r}</span>`;
+
+      if (!e || (!e.n && !e.l && !e.r)) {
+        k.className = 'kb-key kb-empty';
+        k.innerHTML = `<span class="kb-phys">${PHYS[code]||''}</span>`;
+      } else if (isCenter) {
+        k.className = 'kb-key cs';
+        k.innerHTML =
+          `<span class="kb-phys">${PHYS[code]||''}</span>` +
+          `<span class="kb-n">${e.n||''}</span>` +
+          `<span class="kb-r">${e.l||''}</span>`;
+      } else {
+        k.className = 'kb-key';
+        k.innerHTML =
+          `<span class="kb-phys">${PHYS[code]||''}</span>` +
+          `<span class="kb-l">${e.l||''}</span>` +
+          `<span class="kb-n">${e.n||''}</span>` +
+          `<span class="kb-r">${e.r||''}</span>`;
+      }
+
       KEL[code] = k;
       div.appendChild(k);
     }
     kb.appendChild(div);
   }
 
+  // Thumb row
   const tr = document.createElement('div');
   tr.className = 'kb-row';
 
   const muhan = document.createElement('div');
   muhan.className = 'kb-key k-thumb';
   muhan.dataset.code = 'NonConvert';
-  muhan.innerHTML = '無変換<small>左親指</small>';
+  muhan.innerHTML = isCenter
+    ? 'シフト<small>無変換</small>'
+    : '無変換<small>左親指</small>';
   KEL['NonConvert'] = muhan;
 
   const spaceKey = document.createElement('div');
@@ -691,42 +942,77 @@ function buildKeyboard() {
   const henko = document.createElement('div');
   henko.className = 'kb-key k-thumb';
   henko.dataset.code = 'Convert';
-  henko.innerHTML = '変換<small>右親指</small>';
+  henko.innerHTML = isCenter
+    ? 'シフト<small>変換</small>'
+    : '変換<small>右親指</small>';
   KEL['Convert'] = henko;
 
   tr.appendChild(muhan);
   tr.appendChild(spaceKey);
   tr.appendChild(henko);
   kb.appendChild(tr);
+
+  // Update thumb indicators in practice screen
+  const indL = document.getElementById('ind-l');
+  const indR = document.getElementById('ind-r');
+  if (indL) indL.textContent = isCenter ? 'シフト（無変換）' : '無変換 ← 左親指';
+  if (indR) indR.textContent = isCenter ? 'シフト（変換）'   : '右親指 → 変換';
 }
 
 function renderKB() {
   const TGT_CLS = ['tgt','m-n','m-l','m-r','hl-left','hl-right'];
   for (const el of Object.values(KEL)) el.classList.remove(...TGT_CLS);
 
-  if (S.heldKeys.has('NonConvert')) KEL['NonConvert']?.classList.add('hl-left');
-  if (S.heldKeys.has('Convert'))    KEL['Convert']?.classList.add('hl-right');
-
   const indL = document.getElementById('ind-l');
   const indR = document.getElementById('ind-r');
   indL.classList.remove('lit-left','req');
   indR.classList.remove('lit-right','req');
-  indL.classList.toggle('lit-left',  S.heldKeys.has('NonConvert'));
-  indR.classList.toggle('lit-right', S.heldKeys.has('Convert'));
+
+  const isCenter = CL.thumbMode === 'center';
+  const lHeld = S.heldKeys.has('NonConvert');
+  const rHeld = S.heldKeys.has('Convert');
+
+  if (isCenter) {
+    const shiftHeld = lHeld || rHeld;
+    if (lHeld) { KEL['NonConvert']?.classList.add('hl-left');  indL.classList.add('lit-left'); }
+    if (rHeld) { KEL['Convert']?.classList.add('hl-right');    indR.classList.add('lit-right'); }
+    if (!shiftHeld) {} // no highlight needed
+  } else {
+    if (lHeld) { KEL['NonConvert']?.classList.add('hl-left');  }
+    if (rHeld) { KEL['Convert']?.classList.add('hl-right');    }
+    indL.classList.toggle('lit-left',  lHeld);
+    indR.classList.toggle('lit-right', rHeld);
+  }
 
   if (!S.tgtKey || !S.showHint) return;
 
+  if (S.tgtKey.s === 'combo') {
+    // Highlight both combo modifier key and main key
+    KEL[S.tgtKey.comboCode]?.classList.add('tgt', 'm-n');
+    KEL[S.tgtKey.code]?.classList.add('tgt', 'm-n');
+    return;
+  }
+
   const tgtEl = KEL[S.tgtKey.code];
   if (tgtEl) {
-    tgtEl.classList.add('tgt', S.tgtKey.s === 'n' ? 'm-n' : S.tgtKey.s === 'l' ? 'm-l' : 'm-r');
+    tgtEl.classList.add('tgt',
+      S.tgtKey.s === 'n' ? 'm-n' : S.tgtKey.s === 'l' ? 'm-l' : 'm-r');
   }
 
   if (S.tgtKey.s === 'l') {
     KEL['NonConvert']?.classList.add('hl-left');
     indL.classList.add('lit-left', 'req');
+    if (isCenter) { KEL['Convert']?.classList.add('hl-right'); indR.classList.add('lit-right','req'); }
   } else if (S.tgtKey.s === 'r') {
-    KEL['Convert']?.classList.add('hl-right');
-    indR.classList.add('lit-right', 'req');
+    if (isCenter) {
+      KEL['NonConvert']?.classList.add('hl-left');
+      KEL['Convert']?.classList.add('hl-right');
+      indL.classList.add('lit-left', 'req');
+      indR.classList.add('lit-right', 'req');
+    } else {
+      KEL['Convert']?.classList.add('hl-right');
+      indR.classList.add('lit-right', 'req');
+    }
   }
 }
 
@@ -767,12 +1053,12 @@ function startLesson(idx) {
   S.lessonIdx = idx;
   S.queue = buildQueue(lesson.chars, S.sessionSize);
   S.pos = 0;
-  S.showHint = lesson.primary; // hint ON for full-shift lessons
+  S.showHint = lesson.primary;
   S.heldKeys.clear();
   clearPending();
   S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
 
-  document.getElementById('prac-title').textContent = `レッスン${idx+1}: ${lesson.title}`;
+  document.getElementById('prac-title').textContent = `${CL.name} レッスン${idx+1}: ${lesson.title}`;
   document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
   const tc = document.getElementById('text-ctx');
   tc.style.display = 'none';
@@ -815,7 +1101,7 @@ function startTextGroup(groupIdx) {
   clearPending();
   S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
 
-  document.getElementById('prac-title').textContent = `文章練習: ${group.title}`;
+  document.getElementById('prac-title').textContent = `${CL.name} 文章練習: ${group.title}`;
   document.getElementById('hint-lbl').textContent = 'ON';
   const tc2 = document.getElementById('text-ctx');
   tc2.style.display = '';
@@ -850,7 +1136,6 @@ function nextChallenge() {
 
 function updateTextCtx() {
   const el = document.getElementById('text-ctx');
-  // Find which segment we're in
   let seg = S.textSegs[S.textSegs.length - 1];
   for (const s of S.textSegs) {
     if (S.pos < s.startInQueue + s.filteredChars.length) { seg = s; break; }
@@ -871,11 +1156,29 @@ function updateTextCtx() {
 function updateHint() {
   const el = document.getElementById('hint');
   if (!S.showHint || !S.tgtKey) { el.innerHTML = ''; return; }
-  const lbl = PHYS[S.tgtKey.code] || S.tgtKey.code;
+
+  const tk = S.tgtKey;
+
+  if (tk.s === 'combo') {
+    const lbl1 = PHYS[tk.comboCode] || tk.comboCode;
+    const lbl2 = PHYS[tk.code] || tk.code;
+    el.innerHTML = `<span class="hk">${lbl1}</span> ＋ <span class="hk">${lbl2}</span> <span style="font-size:0.78rem">（同時）</span>`;
+    return;
+  }
+
+  const lbl = PHYS[tk.code] || tk.code;
   let html = '';
-  if (S.tgtKey.s === 'l')      html = `<span class="hk">無変換</span> ＋ <span class="hk">${lbl}</span>`;
-  else if (S.tgtKey.s === 'r') html = `<span class="hk">変換</span> ＋ <span class="hk">${lbl}</span>`;
-  else                         html = `<span class="hk">${lbl}</span>`;
+  if (tk.s === 'l' || tk.s === 'r') {
+    if (CL.thumbMode === 'center') {
+      html = `<span class="hk">シフト</span> ＋ <span class="hk">${lbl}</span>`;
+    } else if (tk.s === 'l') {
+      html = `<span class="hk">無変換</span> ＋ <span class="hk">${lbl}</span>`;
+    } else {
+      html = `<span class="hk">変換</span> ＋ <span class="hk">${lbl}</span>`;
+    }
+  } else {
+    html = `<span class="hk">${lbl}</span>`;
+  }
   el.innerHTML = html;
 }
 
@@ -891,13 +1194,18 @@ function updateSessStats() {
     msSum > 0 ? Math.round(correct/msSum*60000) : '－';
 }
 
-function evaluate(code, shift) {
+function evaluate(code, shift, comboCode) {
   if (!S.tgtKey) return;
 
   const now = performance.now();
   if (!S.firstKey) { S.firstKey = true; S.tStart = now; }
 
-  const ok = code === S.tgtKey.code && shift === S.tgtKey.s;
+  let ok;
+  if (S.tgtKey.s === 'combo') {
+    ok = code === S.tgtKey.code && comboCode === S.tgtKey.comboCode;
+  } else {
+    ok = code === S.tgtKey.code && shift === S.tgtKey.s;
+  }
 
   if (ok) {
     const elapsed = now - S.tStart;
@@ -907,8 +1215,8 @@ function evaluate(code, shift) {
     else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
 
     S.tgtKey = null;
-
     flashKey(code, true);
+    if (comboCode) flashKey(comboCode, true);
     document.getElementById('cbox').classList.add('ok');
     S.pos++;
     setTimeout(() => { if (S.screen === 'practice') nextChallenge(); }, 130);
@@ -942,8 +1250,9 @@ function endSession() {
       ).join('');
   }
 
-  if (S.mode === 'random') saveProgress(`l${S.lessonIdx}`,    acc, cpm);
-  else                     saveProgress(`tg${S.textGroupIdx}`, acc, cpm);
+  const pfx = S.layoutId;
+  if (S.mode === 'random') saveProgress(`${pfx}_l${S.lessonIdx}`,    acc, cpm);
+  else                     saveProgress(`${pfx}_tg${S.textGroupIdx}`, acc, cpm);
   showScreen('stats');
 }
 
@@ -965,13 +1274,14 @@ function onKeyDown(e) {
   const code = e.code;
   const now  = performance.now();
 
+  // ── Thumb / shift keys ─────────────────────────────────────────────────────
   if (code === 'NonConvert' || code === 'Convert') {
     e.preventDefault();
     S.heldKeys.add(code);
 
     if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
       clearTimeout(S.pendingChar.tid);
-      const shift = code === 'Convert' ? 'r' : 'l';
+      const shift = resolveThumbShift(code);
       evaluate(S.pendingChar.code, shift);
       S.pendingChar = null;
     } else {
@@ -982,25 +1292,47 @@ function onKeyDown(e) {
     return;
   }
 
-  if (!LAYOUT[code]) return;
+  // ── Regular kana key ───────────────────────────────────────────────────────
+  if (!CL.keys[code]) return;
   e.preventDefault();
 
+  // Check 2-kana simultaneous combo (voiced sounds in 薙刀式), or flush pending
   if (S.pendingChar && S.pendingChar.code !== code) {
+    if (CL.comboMap && (now - S.pendingChar.time) <= WINDOW_MS) {
+      const fwd = CL.comboMap[`${S.pendingChar.code}:${code}`];
+      const rev = CL.comboMap[`${code}:${S.pendingChar.code}`];
+      const voiced = fwd || rev;
+      if (voiced && isKana(voiced)) {
+        clearTimeout(S.pendingChar.tid);
+        const comboCode = fwd ? S.pendingChar.code : code;
+        const mainCode  = fwd ? code : S.pendingChar.code;
+        evaluate(mainCode, 'combo', comboCode);
+        S.pendingChar = null;
+        return;
+      }
+    }
     clearTimeout(S.pendingChar.tid);
     evaluate(S.pendingChar.code, 'n');
     S.pendingChar = null;
   }
 
-  if (S.heldKeys.has('Convert'))    { evaluate(code, 'r'); return; }
-  if (S.heldKeys.has('NonConvert')) { evaluate(code, 'l'); return; }
+  // Thumb held down (long press)
+  if (S.heldKeys.has('Convert')) {
+    evaluate(code, resolveThumbShift('Convert')); return;
+  }
+  if (S.heldKeys.has('NonConvert')) {
+    evaluate(code, resolveThumbShift('NonConvert')); return;
+  }
 
+  // Pending thumb (thumb came first, within window)
   if (S.pendingThumb && (now - S.pendingThumb.time) <= WINDOW_MS) {
-    const shift = S.pendingThumb.code === 'Convert' ? 'r' : 'l';
+    const shift = resolveThumbShift(S.pendingThumb.code);
     evaluate(code, shift);
     S.pendingThumb = null;
     return;
   }
 
+  // Plain key → wait for possible simultaneous thumb
   const tid = setTimeout(() => {
     if (S.pendingChar && S.pendingChar.code === code) {
       evaluate(code, 'n');
@@ -1010,11 +1342,18 @@ function onKeyDown(e) {
   S.pendingChar = { code, time: now, tid };
 }
 
+function resolveThumbShift(thumbCode) {
+  if (CL.thumbMode === 'center') return 'l'; // l===r for center shift layouts
+  return thumbCode === 'Convert' ? 'r' : 'l';
+}
+
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
   if (e.code === 'NonConvert' || e.code === 'Convert') {
     e.preventDefault();
-    S.pendingThumb = null;
+    if (!(CL.thumbMode === 'center' && (S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert')))) {
+      S.pendingThumb = null;
+    }
     if (S.screen === 'practice') renderKB();
   }
 }
@@ -1028,11 +1367,22 @@ function showScreen(name) {
 }
 
 function renderMenu() {
+  // Layout buttons
+  document.querySelectorAll('.layout-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lid === S.layoutId);
+  });
+  document.getElementById('layout-desc').textContent = CL.desc;
+  document.getElementById('menu-title').textContent = `${CL.name} 練習`;
+  document.getElementById('menu-subtitle').textContent =
+    CL.thumbMode === 'center'
+      ? 'PCキーボード必須　／　シフト: 無変換 または 変換'
+      : 'PCキーボード必須　／　左親指シフト: 無変換　／　右親指シフト: 変換';
+
   // ── Random lessons ──
   const grid = document.getElementById('lesson-grid');
   grid.innerHTML = '';
   LESSONS.forEach((lesson, i) => {
-    const best = loadProgress(`l${i}`);
+    const best = loadProgress(`${S.layoutId}_l${i}`);
     const b = document.createElement('button');
     b.className = 'lesson-btn' + (lesson.primary ? ' primary' : '');
     b.innerHTML =
@@ -1046,7 +1396,7 @@ function renderMenu() {
   const tgrid = document.getElementById('text-grid');
   tgrid.innerHTML = '';
   TEXT_GROUPS.forEach((group, i) => {
-    const best = loadProgress(`tg${i}`);
+    const best = loadProgress(`${S.layoutId}_tg${i}`);
     const count = group.all
       ? TEXT_GROUPS.filter(g => !g.all).reduce((s, g) => s + g.texts.length, 0)
       : group.texts.length;
@@ -1060,11 +1410,10 @@ function renderMenu() {
     tgrid.appendChild(b);
   });
 
-  // Size buttons (random)
+  // Size buttons
   document.querySelectorAll('#screen-menu .size-row:first-of-type button').forEach(b => {
     b.classList.toggle('active', parseInt(b.textContent) === S.sessionSize);
   });
-  // Size buttons (text)
   document.querySelectorAll('#tsize-row button').forEach(b => {
     b.classList.toggle('active', parseInt(b.textContent) === S.textSize);
   });
@@ -1111,6 +1460,10 @@ function loadProgress(key) {
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize with 飛鳥123
+  CL = LAYOUTS['asuka123'];
+  buildKanaMap();
+  buildLessons();
   buildKeyboard();
   renderMenu();
 
