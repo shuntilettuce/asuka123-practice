@@ -454,6 +454,41 @@
       font-size: 0.9rem;
       z-index: 999;
     }
+
+    /* ── CPM chart ── */
+    .chart-wrap {
+      margin: 14px 0;
+      background: var(--surface);
+      border: 1px solid var(--key-border);
+      border-radius: 10px;
+      padding: 12px 14px 8px;
+    }
+    .chart-hd {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    #cpm-chart {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+
+    /* ── Weakness drill ── */
+    .weak-chips { margin: 8px 0 10px; min-height: 28px; }
+    .weak-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      border-radius: 4px;
+      padding: 3px 9px;
+      margin: 2px;
+      font-size: 1rem;
+    }
+    .weak-cnt { color: var(--red); font-size: 0.72rem; }
+    .weak-none { font-size: 0.82rem; color: var(--text-dim); }
   </style>
 </head>
 <body>
@@ -496,6 +531,15 @@
     </div>
     <div class="text-grid" id="text-grid"></div>
   </div>
+
+  <div class="menu-section">
+    <div class="menu-sec-hd">弱点補習</div>
+    <div class="weak-chips" id="weak-chips"></div>
+    <div class="ctrl-row">
+      <button class="btn primary" id="weak-start-btn" onclick="startWeaknessDrill()">弱点補習を始める</button>
+      <button class="btn" id="weak-clear-btn" onclick="clearWeakness()">データクリア</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══════════ PRACTICE ══════════ -->
@@ -525,6 +569,7 @@
   </div>
   <div class="ctrl-row">
     <button class="btn" onclick="toggleHint()">ヒント: <span id="hint-lbl">ON</span></button>
+    <button class="btn" id="sound-btn" onclick="toggleSound()">音: <span id="sound-lbl">ON</span></button>
     <button class="btn" onclick="goMenu()">メニューへ</button>
   </div>
 </div>
@@ -539,6 +584,10 @@
     </div>
     <div class="result-sub" id="r-sub"></div>
     <div class="err-box" id="r-errs"></div>
+  </div>
+  <div class="chart-wrap" id="chart-wrap" style="display:none">
+    <div class="chart-hd">CPM 推移（直近最大100回）</div>
+    <canvas id="cpm-chart" width="720" height="150"></canvas>
   </div>
   <div class="ctrl-row">
     <button class="btn primary" onclick="replayLesson()">もう一度</button>
@@ -860,6 +909,7 @@ const S = {
   textSize: 30,
   textSegs: [],
   showHint: true,
+  soundOn: true,
 
   queue: [], pos: 0,
   tgtKana: null, tgtKey: null,
@@ -873,6 +923,39 @@ const S = {
 };
 
 const WINDOW_MS = 50;
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+let _ac = null;
+function getAC() {
+  if (!_ac) _ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (_ac.state === 'suspended') _ac.resume();
+  return _ac;
+}
+
+function playSound(ok) {
+  if (!S.soundOn) return;
+  try {
+    const ac = getAC();
+    const osc = ac.createOscillator();
+    const g   = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    if (ok) {
+      osc.type = 'triangle';
+      osc.frequency.value = 1320;
+      g.gain.setValueAtTime(0.18, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.06);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.07);
+    } else {
+      osc.type = 'sawtooth';
+      osc.frequency.value = 160;
+      g.gain.setValueAtTime(0.12, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.14);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.15);
+    }
+  } catch(_) {}
+}
 
 // ── Keyboard DOM ──────────────────────────────────────────────────────────────
 const KB_ROWS = [
@@ -1215,6 +1298,7 @@ function evaluate(code, shift, comboCode) {
     else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
 
     S.tgtKey = null;
+    playSound(true);
     flashKey(code, true);
     if (comboCode) flashKey(comboCode, true);
     document.getElementById('cbox').classList.add('ok');
@@ -1223,6 +1307,7 @@ function evaluate(code, shift, comboCode) {
   } else {
     S.hadWrong = true;
     S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
+    playSound(false);
     flashKey(code, false);
     const cbox = document.getElementById('cbox');
     cbox.classList.add('err');
@@ -1251,9 +1336,15 @@ function endSession() {
   }
 
   const pfx = S.layoutId;
-  if (S.mode === 'random') saveProgress(`${pfx}_l${S.lessonIdx}`,    acc, cpm);
-  else                     saveProgress(`${pfx}_tg${S.textGroupIdx}`, acc, cpm);
+  const histKey = S.mode === 'weakness' ? `${pfx}_weak` :
+                  S.mode === 'random'   ? `${pfx}_l${S.lessonIdx}` :
+                                          `${pfx}_tg${S.textGroupIdx}`;
+  if (S.mode === 'random')    saveProgress(`${pfx}_l${S.lessonIdx}`,    acc, cpm);
+  else if (S.mode === 'text') saveProgress(`${pfx}_tg${S.textGroupIdx}`, acc, cpm);
+  saveSessionHistory(histKey, cpm);
+  saveErrCumulative(pfx, errs);
   showScreen('stats');
+  drawCpmChart(histKey);
 }
 
 // ── Input handling ────────────────────────────────────────────────────────────
@@ -1410,6 +1501,28 @@ function renderMenu() {
     tgrid.appendChild(b);
   });
 
+  // ── Weakness section ──
+  const cum     = loadErrCumulative(S.layoutId);
+  const wEntries = Object.entries(cum)
+    .filter(([ch]) => KANA_MAP[ch])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12);
+  const wChips  = document.getElementById('weak-chips');
+  const wBtn    = document.getElementById('weak-start-btn');
+  const wClear  = document.getElementById('weak-clear-btn');
+  if (!wEntries.length) {
+    wChips.innerHTML = '<span class="weak-none">まだデータがありません。練習するとここに苦手文字が表示されます。</span>';
+    wBtn.disabled = true; wBtn.style.opacity = '0.4';
+    wClear.style.display = 'none';
+  } else {
+    wChips.innerHTML = wEntries.map(([ch, cnt]) =>
+      `<span class="weak-chip">${ch}<span class="weak-cnt">×${cnt}</span></span>`
+    ).join('');
+    const canDrill = wEntries.length >= 3;
+    wBtn.disabled = !canDrill; wBtn.style.opacity = canDrill ? '' : '0.4';
+    wClear.style.display = '';
+  }
+
   // Size buttons
   document.querySelectorAll('#screen-menu .size-row:first-of-type button').forEach(b => {
     b.classList.toggle('active', parseInt(b.textContent) === S.sessionSize);
@@ -1430,8 +1543,9 @@ function goMenu() {
 }
 
 function replayLesson() {
-  if (S.mode === 'text') startTextGroup(S.textGroupIdx);
-  else                   startLesson(S.lessonIdx);
+  if (S.mode === 'text')          startTextGroup(S.textGroupIdx);
+  else if (S.mode === 'weakness') startWeaknessDrill();
+  else                            startLesson(S.lessonIdx);
 }
 
 function toggleHint() {
@@ -1458,8 +1572,157 @@ function loadProgress(key) {
   catch(_) { return null; }
 }
 
+// ── Session history (CPM chart) ───────────────────────────────────────────────
+function saveSessionHistory(key, cpm) {
+  try {
+    const k = `a123_hist_${key}`;
+    const hist = JSON.parse(localStorage.getItem(k) || '[]');
+    hist.push(cpm);
+    if (hist.length > 100) hist.shift();
+    localStorage.setItem(k, JSON.stringify(hist));
+  } catch(_) {}
+}
+
+function loadHistory(key) {
+  try { return JSON.parse(localStorage.getItem(`a123_hist_${key}`) || '[]'); }
+  catch(_) { return []; }
+}
+
+// ── Cumulative errors (weakness drill) ───────────────────────────────────────
+function saveErrCumulative(layoutId, errs) {
+  if (!Object.keys(errs).length) return;
+  try {
+    const k = `a123_cum_${layoutId}`;
+    const cum = JSON.parse(localStorage.getItem(k) || '{}');
+    for (const [ch, cnt] of Object.entries(errs)) {
+      cum[ch] = (cum[ch] || 0) + cnt;
+    }
+    localStorage.setItem(k, JSON.stringify(cum));
+  } catch(_) {}
+}
+
+function loadErrCumulative(layoutId) {
+  try { return JSON.parse(localStorage.getItem(`a123_cum_${layoutId}`) || '{}'); }
+  catch(_) { return {}; }
+}
+
+function clearWeakness() {
+  try { localStorage.removeItem(`a123_cum_${S.layoutId}`); } catch(_) {}
+  renderMenu();
+}
+
+// ── CPM chart (Canvas) ────────────────────────────────────────────────────────
+function drawCpmChart(histKey) {
+  const hist = loadHistory(histKey);
+  const wrap = document.getElementById('chart-wrap');
+  if (hist.length < 2) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  const canvas = document.getElementById('cpm-chart');
+  const W = 720, H = 150;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const P = { t: 12, r: 16, b: 26, l: 42 };
+  const cw = W - P.l - P.r, ch = H - P.t - P.b;
+
+  const maxV = Math.max(...hist);
+  const minV = Math.min(...hist);
+  const range = maxV - minV || 1;
+
+  ctx.fillStyle = '#16213e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines + Y labels
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = P.t + (ch / 4) * i;
+    ctx.strokeStyle = '#2a2a4a';
+    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke();
+    const val = Math.round(maxV - (range / 4) * i);
+    ctx.fillStyle = '#6272a4';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(val, P.l - 4, y + 4);
+  }
+
+  // X labels
+  const n = hist.length;
+  const xStep = n <= 20 ? 5 : n <= 50 ? 10 : 20;
+  ctx.fillStyle = '#6272a4'; ctx.textAlign = 'center';
+  for (let i = 0; i < n; i += xStep) {
+    const x = P.l + (i / (n - 1)) * cw;
+    ctx.fillText(i + 1, x, H - 5);
+  }
+
+  const tx = i => P.l + (i / (n - 1)) * cw;
+  const ty = v => P.t + (1 - (v - minV) / range) * ch;
+
+  // Area fill
+  ctx.beginPath();
+  ctx.moveTo(tx(0), ty(hist[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(tx(i), ty(hist[i]));
+  ctx.lineTo(tx(n - 1), P.t + ch);
+  ctx.lineTo(tx(0), P.t + ch);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(139,233,253,0.1)';
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.strokeStyle = '#8be9fd'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.moveTo(tx(0), ty(hist[0]));
+  for (let i = 1; i < n; i++) ctx.lineTo(tx(i), ty(hist[i]));
+  ctx.stroke();
+
+  // Current session dot
+  ctx.beginPath();
+  ctx.arc(tx(n - 1), ty(hist[n - 1]), 5, 0, Math.PI * 2);
+  ctx.fillStyle = '#f1fa8c'; ctx.fill();
+}
+
+// ── Weakness drill ────────────────────────────────────────────────────────────
+function startWeaknessDrill() {
+  const cum = loadErrCumulative(S.layoutId);
+  const entries = Object.entries(cum)
+    .filter(([ch]) => KANA_MAP[ch])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
+  if (entries.length < 3) return;
+
+  const chars = entries.map(([ch]) => ch);
+  S.mode = 'weakness';
+  S.queue = buildQueue(chars, S.sessionSize);
+  S.pos = 0;
+  S.showHint = true;
+  S.heldKeys.clear();
+  clearPending();
+  S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
+
+  document.getElementById('prac-title').textContent = `${CL.name} 弱点補習`;
+  document.getElementById('hint-lbl').textContent = 'ON';
+  const tc = document.getElementById('text-ctx');
+  tc.style.display = 'none';
+  tc.classList.remove('text-large');
+  document.getElementById('cbox').style.display = '';
+  showScreen('practice');
+  if (document.activeElement) document.activeElement.blur();
+  nextChallenge();
+}
+
+// ── Sound toggle ──────────────────────────────────────────────────────────────
+function toggleSound() {
+  S.soundOn = !S.soundOn;
+  document.getElementById('sound-lbl').textContent = S.soundOn ? 'ON' : 'OFF';
+  try { localStorage.setItem('a123_sound', S.soundOn ? '1' : '0'); } catch(_) {}
+}
+
 // ── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Sound preference
+  const savedSound = localStorage.getItem('a123_sound');
+  if (savedSound !== null) S.soundOn = savedSound === '1';
+  document.getElementById('sound-lbl').textContent = S.soundOn ? 'ON' : 'OFF';
+
   // Initialize with 飛鳥123
   CL = LAYOUTS['asuka123'];
   buildKanaMap();
