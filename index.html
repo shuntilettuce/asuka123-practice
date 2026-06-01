@@ -635,6 +635,7 @@ const LAYOUTS = {
   asuka123: {
     name: '飛鳥123',
     desc: '親指シフト系 かな配列。左親指: 無変換、右親指: 変換',
+    credit: '飛鳥かな配列 作者：飛鳥',
     thumbMode: 'lr',
     keys: {
       KeyQ: { n:'「', l:'ぱ', r:'（' },
@@ -685,6 +686,7 @@ const LAYOUTS = {
   nicola: {
     name: 'NICOLA',
     desc: '親指シフト配列（JIS X 6004）。左親指: 無変換、右親指: 変換',
+    credit: '© 富士通株式会社 / NICOLA研究会',
     thumbMode: 'lr',
     keys: {
       KeyQ: { n:'',   l:'ぁ', r:''   },
@@ -737,6 +739,7 @@ const LAYOUTS = {
   naginata: {
     name: '薙刀式 v16',
     desc: 'センターシフト配列。シフト: 無変換 or 変換。濁音・半濁音は2キー同時打鍵',
+    credit: '薙刀式 作者：大岡俊彦',
     thumbMode: 'center',
     // comboMap: 'key1:key2' → voiced kana  (bidirectional match)
     comboMap: {
@@ -814,7 +817,8 @@ const LAYOUTS = {
   // ── 新下駄配列 ────────────────────────────────────────────────────────────────
   shingeta: {
     name: '新下駄配列',
-    desc: '中指・薬指シフト方式（作者：コウイ）。D/K=中指シフト、S/L=薬指シフト。親指キー不使用',
+    desc: '中指・薬指シフト方式。D/K=中指シフト、S/L=薬指シフト。親指キー不使用',
+    credit: '新下駄配列 作者：コウイ',
     thumbMode: 'finger',
     fingerShiftKeys: ['KeyD','KeyK','KeyS','KeyL'],
     keys: {
@@ -962,6 +966,7 @@ function buildLessons() {
 function switchLayout(id) {
   S.layoutId = id;
   CL = LAYOUTS[id];
+  S.heldFingerKeys.clear();
   buildKanaMap();
   buildLessons();
   buildKeyboard();
@@ -1167,6 +1172,7 @@ const S = {
   tgtKana: null, tgtKey: null,
 
   heldKeys: new Set(),
+  heldFingerKeys: new Set(),
   pendingChar:  null,
   pendingThumb: null,
 
@@ -1634,6 +1640,7 @@ function endSession() {
 function clearPending() {
   if (S.pendingChar) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
   S.pendingThumb = null;
+  S.heldFingerKeys.clear();
 }
 
 function onKeyDown(e) {
@@ -1670,6 +1677,25 @@ function onKeyDown(e) {
   // ── Regular kana key ───────────────────────────────────────────────────────
   if (!CL.keys[code]) return;
   e.preventDefault();
+
+  // Held finger-shift combo (fingerMode: D/K/S/L held + cross-hand key)
+  if (CL.thumbMode === 'finger' && S.heldFingerKeys.size > 0 && CL.comboMap) {
+    for (const heldCode of S.heldFingerKeys) {
+      if (heldCode === code) continue;
+      const fwd = CL.comboMap[`${heldCode}:${code}`];
+      const rev = CL.comboMap[`${code}:${heldCode}`];
+      const voiced = fwd || rev;
+      if (voiced && isKana(voiced)) {
+        if (S.pendingChar?.code === heldCode) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+        evaluate(fwd ? code : heldCode, 'combo', fwd ? heldCode : code);
+        return;
+      }
+    }
+  }
+  // Track fingerShiftKey as held (done after the check so first keydown still uses pendingChar path)
+  if (CL.thumbMode === 'finger' && (CL.fingerShiftKeys || []).includes(code)) {
+    S.heldFingerKeys.add(code);
+  }
 
   // Check 2-kana simultaneous combo (voiced sounds in 薙刀式), or flush pending
   if (S.pendingChar && S.pendingChar.code !== code) {
@@ -1724,6 +1750,7 @@ function resolveThumbShift(thumbCode) {
 
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
+  S.heldFingerKeys.delete(e.code);
   if (e.code === 'NonConvert' || e.code === 'Convert') {
     if (CL.thumbMode === 'finger') { e.preventDefault(); return; }
     e.preventDefault();
@@ -1747,7 +1774,9 @@ function renderMenu() {
   document.querySelectorAll('.layout-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.lid === S.layoutId);
   });
-  document.getElementById('layout-desc').textContent = CL.desc;
+  document.getElementById('layout-desc').innerHTML =
+    CL.desc +
+    (CL.credit ? `<span style="display:block;font-size:0.72rem;color:var(--text-dim);margin-top:2px">${CL.credit}</span>` : '');
   document.getElementById('menu-title').textContent = `${CL.name} 練習`;
   document.getElementById('menu-subtitle').textContent =
     CL.thumbMode === 'center'
