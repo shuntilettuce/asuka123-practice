@@ -911,7 +911,10 @@ function isKana(c) {
 function buildKanaMap() {
   KANA_MAP = {};
   COMBO_MODS = new Set();
-  const slots = CL.thumbMode === 'finger' ? ['n'] : ['n','l','r'];
+  // center モード(薙刀式)は l=r なので 'r' を処理すると 'l' が上書きされる → 'l' のみ使用
+  const slots = CL.thumbMode === 'finger' ? ['n'] :
+                CL.thumbMode === 'center'  ? ['n','l'] :
+                ['n','l','r'];
   for (const [code, e] of Object.entries(CL.keys)) {
     for (const s of slots) {
       const ch = e[s];
