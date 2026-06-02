@@ -1522,7 +1522,13 @@ function updateTextCtx() {
   let html = `<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:3px">${seg.title}</div>`;
   let fi = 0;
   for (const c of seg.text) {
-    if (!KANA_MAP[c]) { html += `<span class="tc-todo">${c}</span>`; continue; }
+    if (!KANA_MAP[c]) {
+      // 入力対象外の文字: カーソルが通過済みなら薄色、未到達なら通常色
+      html += localPos >= fi
+        ? `<span class="tc-done">${c}</span>`
+        : `<span class="tc-todo">${c}</span>`;
+      continue;
+    }
     if (fi < localPos)        html += `<span class="tc-done">${c}</span>`;
     else if (fi === localPos) html += `<span class="tc-cur">${c}</span>`;
     else                      html += `<span class="tc-todo">${c}</span>`;
