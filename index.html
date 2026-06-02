@@ -1663,6 +1663,7 @@ function onKeyDown(e) {
     if (CL.thumbMode === 'finger') { e.preventDefault(); return; }
     e.preventDefault();
     S.heldKeys.add(code);
+    S.heldFingerKeys.clear(); // 親指シフト優先：コンボモード解除
 
     if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
       clearTimeout(S.pendingChar.tid);
@@ -1681,8 +1682,10 @@ function onKeyDown(e) {
   if (!CL.keys[code]) return;
   e.preventDefault();
 
-  // Held combo-modifier key (全配列対応: 薙刀式 F/J/B/M、新下駄 D/K/S/L/I/O など)
-  if (S.heldFingerKeys.size > 0 && CL.comboMap) {
+  // Held combo-modifier key (comboMap使用配列: 薙刀式 F/J/B/M、新下駄 D/K/S/L/I/O)
+  // 親指シフトが押されている間はスキップ（親指シフト優先）
+  const thumbHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+  if (!thumbHeld && S.heldFingerKeys.size > 0 && CL.comboMap) {
     for (const heldCode of S.heldFingerKeys) {
       if (heldCode === code) continue;
       const fwd = CL.comboMap[`${heldCode}:${code}`];
@@ -1695,8 +1698,8 @@ function onKeyDown(e) {
       }
     }
   }
-  // Track key as held if it can act as a combo modifier
-  if (COMBO_MODS.has(code)) {
+  // 親指シフト中でなければコンボ修飾キーとして追跡
+  if (!thumbHeld && COMBO_MODS.has(code)) {
     S.heldFingerKeys.add(code);
   }
 
