@@ -1468,6 +1468,11 @@ function renderKB() {
       const letter = S.tgtKey.seq[S.romajiPos];
       const tgtEl = KEL[ROMAJI_REV[letter]];
       if (tgtEl) tgtEl.classList.add('tgt', 'm-n');
+      if (S.tgtKana === 'っ' && S.romajiPos === 0) {
+        const alt = sokuonAltLetter();
+        const altEl = alt && KEL[ROMAJI_REV[alt]];
+        if (altEl) altEl.classList.add('tgt', 'm-n');
+      }
     }
     return;
   }
@@ -1686,10 +1691,15 @@ function updateHint() {
   const tk = S.tgtKey;
 
   if (tk.s === 'romaji') {
-    el.innerHTML = tk.seq.map((l, i) => {
+    let html = tk.seq.map((l, i) => {
       const cls = i < S.romajiPos ? 'tc-done' : i === S.romajiPos ? 'tc-cur' : 'tc-todo';
       return `<span class="hk ${cls}">${l.toUpperCase()}</span>`;
     }).join('');
+    if (S.tgtKana === 'っ' && S.romajiPos === 0) {
+      const alt = sokuonAltLetter();
+      if (alt) html += ` <span style="font-size:0.76rem;color:var(--text-dim)">または</span> <span class="hk">${alt.toUpperCase()}</span>`;
+    }
+    el.innerHTML = html;
     return;
   }
 
@@ -1774,6 +1784,19 @@ function evaluate(code, shift, comboCode) {
   }
 }
 
+// 促音「っ」は l 接頭（ltu）の単独入力に加え、直後のかなの子音を二重化する入力
+// （例:「った」= tta の最初の t）も文脈上妥当なら受け入れる。次に控えるかなが
+// 母音以外の子音で始まる場合のみ有効。
+function sokuonAltLetter() {
+  const nextKana = S.queue[S.pos + 1];
+  if (!nextKana) return null;
+  const romaji = ROMAJI_TABLE[nextKana];
+  if (!romaji) return null;
+  const first = romaji[0];
+  // 'l' は ltu（標準の促音入力）の先頭と衝突するため対象外
+  return (first === 'l' || 'aiueo'.includes(first)) ? null : first;
+}
+
 // ローマ字連続入力レイアウト（大西配列）用の評価ロジック。
 // シフト判定の代わりに、かな1文字に対応するローマ字の各キーを順番に評価する。
 function evaluateRomaji(code) {
@@ -1783,6 +1806,15 @@ function evaluateRomaji(code) {
 
   const now = performance.now();
   if (!S.firstKey) { S.firstKey = true; S.tStart = now; }
+
+  if (S.tgtKana === 'っ' && S.romajiPos === 0) {
+    const alt = sokuonAltLetter();
+    if (alt && letter === alt) {
+      flashKey(code, true);
+      commitSuccess(now - S.tStart);
+      return;
+    }
+  }
 
   const expected = S.tgtKey.seq[S.romajiPos];
   if (letter === expected) {
