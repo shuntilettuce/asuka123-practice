@@ -491,6 +491,25 @@
     }
     .weak-cnt { color: var(--red); font-size: 0.72rem; }
     .weak-none { font-size: 0.82rem; color: var(--text-dim); }
+
+    /* ── SRS mastery ── */
+    .srs-summary { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+    .srs-mastery-val { font-size: 1.6rem; font-weight: bold; color: var(--purple); }
+    .srs-mastery-sub { font-size: 0.8rem; color: var(--text-dim); }
+    .srs-heatmap { display: flex; flex-wrap: wrap; gap: 4px; }
+    .srs-cell {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background: var(--key-bg);
+      border: 1px solid var(--key-border);
+      color: var(--text-dim);
+    }
+    .srs-cell.lv1 { background: #fef3c7; border-color: #fcd34d; color: #92400e; }
+    .srs-cell.lv2 { background: #dbeafe; border-color: #93c5fd; color: #1e40af; }
+    .srs-cell.lv3 { background: #bfdbfe; border-color: #60a5fa; color: #1e3a8a; }
+    .srs-cell.lv4 { background: var(--purple); border-color: var(--purple); color: #fff; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -507,6 +526,7 @@
     <button class="layout-btn" data-lid="nicola"   onclick="switchLayout('nicola')">NICOLA</button>
     <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v16</button>
     <button class="layout-btn" data-lid="shingeta" onclick="switchLayout('shingeta')">新下駄配列</button>
+    <button class="layout-btn" data-lid="onishi"   onclick="switchLayout('onishi')">大西配列</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
     <p class="layout-desc" id="layout-desc" style="margin:0;flex:1"></p>
@@ -536,6 +556,18 @@
       <button onclick="setTextSize(20)">20</button>
     </div>
     <div class="text-grid" id="text-grid"></div>
+  </div>
+
+  <div class="menu-section">
+    <div class="menu-sec-hd">習得度</div>
+    <div class="srs-summary">
+      <div class="srs-mastery-val" id="srs-mastery-val">0%</div>
+      <div class="srs-mastery-sub" id="srs-mastery-sub"></div>
+    </div>
+    <div class="srs-heatmap" id="srs-heatmap"></div>
+    <div class="ctrl-row" style="margin-top:10px">
+      <button class="btn primary" id="srs-review-btn" onclick="startSrsReview()">今日の復習を始める</button>
+    </div>
   </div>
 
   <div class="menu-section">
@@ -627,6 +659,31 @@ const PHYS = {
   KeyH:'H', KeyJ:'J', KeyK:'K', KeyL:'L', Semicolon:';', Quote:"'",
   KeyZ:'Z', KeyX:'X', KeyC:'C', KeyV:'V', KeyB:'B',
   KeyN:'N', KeyM:'M', Comma:',', Period:'.', Slash:'/',
+};
+
+// かな → ローマ字（ワープロ式）変換テーブル。ローマ字連続入力レイアウト（大西配列）で使用。
+// 促音「っ」は ltu、小書き文字は l 接頭（la/li/lu/le/lo, lya/lyu/lyo）、「ん」は nn で統一し、
+// 前後の文脈に依存せず1文字ずつ判定できるようにしている。
+const ROMAJI_TABLE = {
+  'あ':'a','い':'i','う':'u','え':'e','お':'o',
+  'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+  'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+  'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+  'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
+  'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+  'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+  'や':'ya','ゆ':'yu','よ':'yo',
+  'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+  'わ':'wa','を':'wo','ん':'nn',
+  'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+  'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+  'だ':'da','ぢ':'di','づ':'du','で':'de','ど':'do',
+  'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+  'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+  'ぁ':'la','ぃ':'li','ぅ':'lu','ぇ':'le','ぉ':'lo',
+  'ゃ':'lya','ゅ':'lyu','ょ':'lyo',
+  'っ':'ltu',
+  'ー':'-',
 };
 
 const LAYOUTS = {
@@ -892,12 +949,34 @@ const LAYOUTS = {
         body: '① <b>単打のみ</b>（レッスン3・4）でキー配置を覚える<br>② <b>K/Dシフト</b>（中指シフト）を追加練習<br>③ <b>L/Sシフト</b>（薬指シフト）を練習<br>④ <b>全シフト</b>でスムーズに打てるまで繰り返す' },
     ],
   },
+
+  // ── 大西配列（ローマ字入力の配列最適化） ─────────────────────────────────
+  onishi: {
+    name: '大西配列',
+    desc: 'ローマ字入力用のアルファベット再配置。かな1文字ではなくローマ字を連続入力してIME変換する方式',
+    credit: '大西配列 作者：大西拓磨（https://o24.works/layout/）',
+    inputMode: 'romaji',
+    romajiKeys: {
+      KeyQ:'q', KeyW:'l', KeyE:'u', KeyR:',', KeyT:'.', KeyY:'f', KeyU:'w', KeyI:'r', KeyO:'y', KeyP:'p',
+      KeyA:'e', KeyS:'i', KeyD:'a', KeyF:'o', KeyG:'-', KeyH:'k', KeyJ:'t', KeyK:'n', KeyL:'s', Semicolon:'h',
+      KeyZ:'z', KeyX:'x', KeyC:'c', KeyV:'v', KeyB:';', KeyN:'g', KeyM:'d', Comma:'m', Period:'j', Slash:'b',
+    },
+    tutorial: [
+      { title: '大西配列とは',
+        body: '大西配列は他の3配列と違い、<b>ローマ字入力を効率化するためのアルファベット再配置</b>です。<br>親指シフトのような同時押しはなく、QWERTYのアルファベットの位置を並べ替えただけの配列です。' },
+      { title: '入力方法',
+        body: '各かな文字を<b>ローマ字（1〜3打鍵）</b>で入力します。<br>例：「た」＝ J→A の位置（t の後 a）<br>促音「っ」は <span class="hk">LTU</span>、小さい文字（ゃゅょ等）は <span class="hk">L</span> を頭につけて入力します。' },
+      { title: '練習のコツ',
+        body: 'このアプリの他配列と同じ画面で練習できますが、判定は<b>1キーずつのローマ字連続入力</b>です。<br>最初は清音（あ〜わ行）から。慣れたら濁音・拗音・促音を含む全かなに挑戦しましょう。' },
+    ],
+  },
 };
 
 // ── Dynamic layout state ──────────────────────────────────────────────────────
 let CL = null;         // current layout object
 let KANA_MAP = {};     // kana → { code, s }  (s: 'n'|'l'|'r'|'combo')
 let COMBO_MODS = new Set(); // keys that appear as first-key in any comboMap entry
+let ROMAJI_REV = {}; // ローマ字連続入力レイアウト用: letter -> physical code
 let LESSONS = [];
 
 function isKana(c) {
@@ -911,6 +990,16 @@ function isKana(c) {
 function buildKanaMap() {
   KANA_MAP = {};
   COMBO_MODS = new Set();
+  ROMAJI_REV = {};
+
+  if (CL.inputMode === 'romaji') {
+    for (const [code, letter] of Object.entries(CL.romajiKeys)) ROMAJI_REV[letter] = code;
+    for (const [kana, romaji] of Object.entries(ROMAJI_TABLE)) {
+      KANA_MAP[kana] = { seq: romaji.split(''), s: 'romaji' };
+    }
+    return;
+  }
+
   // center モード(薙刀式)は l=r なので 'r' を処理すると 'l' が上書きされる → 'l' のみ使用
   const slots = CL.thumbMode === 'finger' ? ['n'] :
                 CL.thumbMode === 'center'  ? ['n','l'] :
@@ -934,7 +1023,23 @@ function buildKanaMap() {
   }
 }
 
+const ROMAJI_SEION = [...'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるろわをん'];
+const ROMAJI_DAKU  = [...'がぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ'];
+
 function buildLessons() {
+  if (CL.inputMode === 'romaji') {
+    const allKana = Object.keys(KANA_MAP);
+    const seion = ROMAJI_SEION.filter(c => KANA_MAP[c]);
+    const daku  = ROMAJI_DAKU.filter(c => KANA_MAP[c]);
+    LESSONS = [
+      { title: '清音（あ行〜わ行）',       chars: seion,                primary: true  },
+      { title: '濁音・半濁音を追加',       chars: [...seion, ...daku], primary: true  },
+      { title: '拗音・促音・長音を追加',   chars: allKana,             primary: true  },
+      { title: '全かな総合練習',           chars: allKana,             primary: false },
+    ];
+    return;
+  }
+
   const homeRow = CL.homeRow || [];
   const allKana = Object.keys(KANA_MAP);
 
@@ -976,6 +1081,7 @@ function switchLayout(id) {
   buildKanaMap();
   buildLessons();
   buildKeyboard();
+  loadSrsData(id);
   renderMenu();
 }
 
@@ -1175,7 +1281,7 @@ const S = {
   soundOn: true,
 
   queue: [], pos: 0,
-  tgtKana: null, tgtKey: null,
+  tgtKana: null, tgtKey: null, romajiPos: 0,
 
   heldKeys: new Set(),
   heldFingerKeys: new Set(),
@@ -1238,14 +1344,32 @@ function buildKeyboard() {
 
   const isCenter = CL.thumbMode === 'center';
   const isFinger = CL.thumbMode === 'finger';
+  const isRomaji = CL.inputMode === 'romaji';
 
   for (const row of KB_ROWS) {
     const div = document.createElement('div');
     div.className = 'kb-row';
     for (const code of row) {
-      const e = CL.keys[code];
       const k = document.createElement('div');
       k.dataset.code = code;
+
+      if (isRomaji) {
+        const letter = CL.romajiKeys[code];
+        if (!letter) {
+          k.className = 'kb-key kb-empty';
+          k.innerHTML = `<span class="kb-phys">${PHYS[code]||''}</span>`;
+        } else {
+          k.className = 'kb-key';
+          k.innerHTML =
+            `<span class="kb-phys">${PHYS[code]||''}</span>` +
+            `<span class="kb-n">${letter.toUpperCase()}</span>`;
+        }
+        KEL[code] = k;
+        div.appendChild(k);
+        continue;
+      }
+
+      const e = CL.keys[code];
 
       if (!e || (!e.n && !e.l && !e.r)) {
         k.className = 'kb-key kb-empty';
@@ -1275,7 +1399,13 @@ function buildKeyboard() {
   const tr = document.createElement('div');
   tr.className = 'kb-row';
 
-  if (isFinger) {
+  if (isRomaji) {
+    const note = document.createElement('div');
+    note.className = 'kb-key k-space';
+    note.style.width = '400px';
+    note.textContent = 'シフトキーなし（ローマ字を連続入力）';
+    tr.appendChild(note);
+  } else if (isFinger) {
     // Finger-shift mode: show shift key info instead of thumb keys
     const lbl = document.createElement('div');
     lbl.className = 'kb-key k-thumb';
@@ -1319,6 +1449,8 @@ function buildKeyboard() {
   kb.appendChild(tr);
 
   // Update thumb indicators in practice screen
+  const thumbRow = document.querySelector('.thumb-row');
+  if (thumbRow) thumbRow.style.display = isRomaji ? 'none' : '';
   const indL = document.getElementById('ind-l');
   const indR = document.getElementById('ind-r');
   if (indL) indL.textContent = isFinger ? 'D(中指)→右手シフト / S(薬指)→右手シフト'
@@ -1330,6 +1462,15 @@ function buildKeyboard() {
 function renderKB() {
   const TGT_CLS = ['tgt','m-n','m-l','m-r','hl-left','hl-right'];
   for (const el of Object.values(KEL)) el.classList.remove(...TGT_CLS);
+
+  if (CL.inputMode === 'romaji') {
+    if (S.tgtKey && S.showHint) {
+      const letter = S.tgtKey.seq[S.romajiPos];
+      const tgtEl = KEL[ROMAJI_REV[letter]];
+      if (tgtEl) tgtEl.classList.add('tgt', 'm-n');
+    }
+    return;
+  }
 
   const indL = document.getElementById('ind-l');
   const indR = document.getElementById('ind-r');
@@ -1490,6 +1631,7 @@ function nextChallenge() {
   S.firstKey = false;
   S.hadWrong = false;
   S.tStart   = 0;
+  S.romajiPos = 0;
 
   const n = S.queue.length;
   if (S.mode === 'text') {
@@ -1543,6 +1685,14 @@ function updateHint() {
 
   const tk = S.tgtKey;
 
+  if (tk.s === 'romaji') {
+    el.innerHTML = tk.seq.map((l, i) => {
+      const cls = i < S.romajiPos ? 'tc-done' : i === S.romajiPos ? 'tc-cur' : 'tc-todo';
+      return `<span class="hk ${cls}">${l.toUpperCase()}</span>`;
+    }).join('');
+    return;
+  }
+
   if (tk.s === 'combo') {
     const lbl1 = PHYS[tk.comboCode] || tk.comboCode;
     const lbl2 = PHYS[tk.code] || tk.code;
@@ -1578,6 +1728,29 @@ function updateSessStats() {
     msSum > 0 ? Math.round(correct/msSum*60000) : '－';
 }
 
+function commitSuccess(elapsed) {
+  S.stats.total++;
+  S.stats.msSum += elapsed;
+  if (!S.hadWrong) S.stats.correct++;
+  else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
+  updateSrs(S.tgtKana, !S.hadWrong);
+
+  S.tgtKey = null;
+  playSound(true);
+  document.getElementById('cbox').classList.add('ok');
+  S.pos++;
+  setTimeout(() => { if (S.screen === 'practice') nextChallenge(); }, 130);
+}
+
+function commitFail() {
+  S.hadWrong = true;
+  S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
+  playSound(false);
+  const cbox = document.getElementById('cbox');
+  cbox.classList.add('err');
+  setTimeout(() => cbox.classList.remove('err'), 300);
+}
+
 function evaluate(code, shift, comboCode) {
   if (!S.tgtKey) return;
 
@@ -1592,27 +1765,38 @@ function evaluate(code, shift, comboCode) {
   }
 
   if (ok) {
-    const elapsed = now - S.tStart;
-    S.stats.total++;
-    S.stats.msSum += elapsed;
-    if (!S.hadWrong) S.stats.correct++;
-    else S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
-
-    S.tgtKey = null;
-    playSound(true);
     flashKey(code, true);
     if (comboCode) flashKey(comboCode, true);
-    document.getElementById('cbox').classList.add('ok');
-    S.pos++;
-    setTimeout(() => { if (S.screen === 'practice') nextChallenge(); }, 130);
+    commitSuccess(now - S.tStart);
   } else {
-    S.hadWrong = true;
-    S.stats.errs[S.tgtKana] = (S.stats.errs[S.tgtKana] || 0) + 1;
-    playSound(false);
     flashKey(code, false);
-    const cbox = document.getElementById('cbox');
-    cbox.classList.add('err');
-    setTimeout(() => cbox.classList.remove('err'), 300);
+    commitFail();
+  }
+}
+
+// ローマ字連続入力レイアウト（大西配列）用の評価ロジック。
+// シフト判定の代わりに、かな1文字に対応するローマ字の各キーを順番に評価する。
+function evaluateRomaji(code) {
+  if (!S.tgtKey) return;
+  const letter = CL.romajiKeys[code];
+  if (!letter) return;
+
+  const now = performance.now();
+  if (!S.firstKey) { S.firstKey = true; S.tStart = now; }
+
+  const expected = S.tgtKey.seq[S.romajiPos];
+  if (letter === expected) {
+    flashKey(code, true);
+    S.romajiPos++;
+    if (S.romajiPos >= S.tgtKey.seq.length) {
+      commitSuccess(now - S.tStart);
+    } else {
+      updateHint();
+      renderKB();
+    }
+  } else {
+    flashKey(code, false);
+    commitFail();
   }
 }
 
@@ -1638,6 +1822,7 @@ function endSession() {
 
   const pfx = S.layoutId;
   const histKey = S.mode === 'weakness' ? `${pfx}_weak` :
+                  S.mode === 'srs'      ? `${pfx}_srs` :
                   S.mode === 'random'   ? `${pfx}_l${S.lessonIdx}` :
                                           `${pfx}_tg${S.textGroupIdx}`;
   if (S.mode === 'random')    saveProgress(`${pfx}_l${S.lessonIdx}`,    acc, cpm);
@@ -1666,6 +1851,14 @@ function onKeyDown(e) {
 
   const code = e.code;
   const now  = performance.now();
+
+  // ── ローマ字連続入力レイアウト（大西配列）: シフト判定なし ─────────────────
+  if (CL.inputMode === 'romaji') {
+    if (!CL.romajiKeys[code]) return;
+    e.preventDefault();
+    evaluateRomaji(code);
+    return;
+  }
 
   // ── Thumb / shift keys ─────────────────────────────────────────────────────
   if (code === 'NonConvert' || code === 'Convert') {
@@ -1794,7 +1987,9 @@ function renderMenu() {
     (CL.credit ? `<span style="display:block;font-size:0.72rem;color:var(--text-dim);margin-top:2px">${CL.credit}</span>` : '');
   document.getElementById('menu-title').textContent = `${CL.name} 練習`;
   document.getElementById('menu-subtitle').textContent =
-    CL.thumbMode === 'center'
+    CL.inputMode === 'romaji'
+      ? 'PCキーボード必須　／　シフトなし・ローマ字連続入力'
+      : CL.thumbMode === 'center'
       ? 'PCキーボード必須　／　シフト: 無変換 または 変換'
       : CL.thumbMode === 'finger'
       ? 'PCキーボード必須　／　中指シフト: D(→右)/K(→左)　薬指シフト: S(→右)/L(→左)'
@@ -1831,6 +2026,29 @@ function renderMenu() {
     b.onclick = () => startTextGroup(i);
     tgrid.appendChild(b);
   });
+
+  // ── SRS mastery heatmap ──
+  const heat = document.getElementById('srs-heatmap');
+  heat.innerHTML = '';
+  const srsChars = [...new Set(Object.keys(KANA_MAP))];
+  let masteredCount = 0, dueCount = 0;
+  srsChars.forEach(ch => {
+    const lv = getSrsLevel(ch);
+    if (lv >= 4) masteredCount++;
+    if (getSrsDue(ch) <= SRS_CNT) dueCount++;
+    const cell = document.createElement('div');
+    cell.className = 'srs-cell' + (lv > 0 ? ` lv${lv}` : '');
+    cell.textContent = ch;
+    const rec = SRS[ch];
+    cell.title = rec ? `Lv${lv}　正解${rec.hits} / ミス${rec.miss}` : '未学習';
+    heat.appendChild(cell);
+  });
+  const masteryPct = srsChars.length ? Math.round(masteredCount / srsChars.length * 100) : 0;
+  document.getElementById('srs-mastery-val').textContent = `${masteryPct}%`;
+  document.getElementById('srs-mastery-sub').textContent =
+    `${masteredCount} / ${srsChars.length} 文字マスター　・　${dueCount}文字が復習対象`;
+  const srsBtn = document.getElementById('srs-review-btn');
+  srsBtn.textContent = dueCount > 0 ? `今日の復習を始める（${dueCount}文字）` : '今日の復習を始める（余裕あり）';
 
   // ── Weakness section ──
   const cum     = loadErrCumulative(S.layoutId);
@@ -1876,6 +2094,7 @@ function goMenu() {
 function replayLesson() {
   if (S.mode === 'text')          startTextGroup(S.textGroupIdx);
   else if (S.mode === 'weakness') startWeaknessDrill();
+  else if (S.mode === 'srs')      startSrsReview();
   else                            startLesson(S.lessonIdx);
 }
 
@@ -1940,6 +2159,74 @@ function loadErrCumulative(layoutId) {
 function clearWeakness() {
   try { localStorage.removeItem(`a123_cum_${S.layoutId}`); } catch(_) {}
   renderMenu();
+}
+
+// ── SRS（習得度・簡易間隔反復） ─────────────────────────────────────────────
+// レベル0〜4を文字ごとに管理。正解するとレベルアップ＋次回出題を先延ばし、
+// ミスするとレベルダウン＋すぐ再出題。due はレイアウトごとの試行回数カウンタ基準。
+let SRS = {};     // { [kana]: {level, due, hits, miss} }（現在のレイアウト分）
+let SRS_CNT = 0;  // 現在のレイアウトの試行回数カウンタ
+const SRS_INTERVAL = [1, 3, 8, 20, 50]; // レベル到達後、次回出題までの試行数オフセット
+
+function loadSrsData(layoutId) {
+  try { SRS = JSON.parse(localStorage.getItem(`a123_srs_${layoutId}`) || '{}'); } catch(_) { SRS = {}; }
+  try { SRS_CNT = parseInt(localStorage.getItem(`a123_srsCnt_${layoutId}`) || '0', 10) || 0; } catch(_) { SRS_CNT = 0; }
+}
+
+function persistSrs() {
+  try {
+    localStorage.setItem(`a123_srs_${S.layoutId}`, JSON.stringify(SRS));
+    localStorage.setItem(`a123_srsCnt_${S.layoutId}`, String(SRS_CNT));
+  } catch(_) {}
+}
+
+function updateSrs(kana, success) {
+  if (!kana || !KANA_MAP[kana]) return;
+  SRS_CNT++;
+  const rec = SRS[kana] || { level: 0, due: 0, hits: 0, miss: 0 };
+  if (success) { rec.level = Math.min(4, rec.level + 1); rec.hits++; }
+  else         { rec.level = Math.max(0, rec.level - 1); rec.miss++; }
+  rec.due = SRS_CNT + SRS_INTERVAL[rec.level];
+  SRS[kana] = rec;
+  persistSrs();
+}
+
+function getSrsLevel(kana) { return SRS[kana]?.level ?? 0; }
+function getSrsDue(kana)   { return SRS[kana] ? SRS[kana].due : 0; }
+
+function buildSrsReviewChars() {
+  const allChars = Object.keys(KANA_MAP);
+  const due = allChars.filter(ch => getSrsDue(ch) <= SRS_CNT);
+  const pool = due.length >= 5 ? due : allChars.slice().sort((a, b) => getSrsLevel(a) - getSrsLevel(b));
+
+  const weighted = [];
+  const LEVEL_WEIGHT = [4, 3, 2, 1, 1];
+  for (const ch of pool) {
+    const w = LEVEL_WEIGHT[getSrsLevel(ch)];
+    for (let i = 0; i < w; i++) weighted.push(ch);
+  }
+  return weighted.length ? weighted : allChars;
+}
+
+function startSrsReview() {
+  const chars = buildSrsReviewChars();
+  S.mode = 'srs';
+  S.queue = buildQueue(chars, S.sessionSize);
+  S.pos = 0;
+  S.showHint = true;
+  S.heldKeys.clear();
+  clearPending();
+  S.stats = { total:0, correct:0, msSum:0, errs:{}, t0: performance.now() };
+
+  document.getElementById('prac-title').textContent = `${CL.name} 今日の復習`;
+  document.getElementById('hint-lbl').textContent = 'ON';
+  const tc = document.getElementById('text-ctx');
+  tc.style.display = 'none';
+  tc.classList.remove('text-large');
+  document.getElementById('cbox').style.display = '';
+  showScreen('practice');
+  if (document.activeElement) document.activeElement.blur();
+  nextChallenge();
 }
 
 // ── CPM chart (Canvas) ────────────────────────────────────────────────────────
@@ -2094,6 +2381,7 @@ document.addEventListener('DOMContentLoaded', () => {
   buildKanaMap();
   buildLessons();
   buildKeyboard();
+  loadSrsData('asuka123');
   renderMenu();
 
   document.addEventListener('keydown', onKeyDown);
