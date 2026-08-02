@@ -529,7 +529,7 @@
   <div class="layout-row" id="layout-row">
     <button class="layout-btn" data-lid="asuka123" onclick="switchLayout('asuka123')">飛鳥123</button>
     <button class="layout-btn" data-lid="nicola"   onclick="switchLayout('nicola')">NICOLA</button>
-    <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v16</button>
+    <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v18</button>
     <button class="layout-btn" data-lid="shingeta" onclick="switchLayout('shingeta')">新下駄配列</button>
     <button class="layout-btn" data-lid="onishi"   onclick="switchLayout('onishi')">大西配列</button>
   </div>
@@ -793,13 +793,13 @@ const LAYOUTS = {
     ],
   },
 
-  // ── 薙刀式 v16快速版 ─────────────────────────────────────────────────────
+  // ── 薙刀式 v18トップ版 ─────────────────────────────────────────────────────
   // center shift: 無変換・変換どちらでもシフト (l === r)
   // 濁音・半濁音は2キー同時打鍵（クロスハンド）:
   //   濁音 : F(か) または J(あ) を反対側のキーと同時押し
   //   半濁音: B(そ) または M(な) を反対側のキーと同時押し
   naginata: {
-    name: '薙刀式 v16',
+    name: '薙刀式 v18',
     desc: 'センターシフト配列。シフト: 無変換 or 変換。濁音・半濁音は2キー同時打鍵',
     credit: '薙刀式 作者：大岡俊彦',
     thumbMode: 'center',
@@ -835,7 +835,7 @@ const LAYOUTS = {
     },
     keys: {
       // Upper row (Q, T, Y, BracketLeft, Quote: unassigned)
-      KeyW: { n:'き', l:'ぬ', r:'ぬ' },
+      KeyW: { n:'き', l:'ね', r:'ね' },
       KeyE: { n:'て', l:'り', r:'り' },
       KeyR: { n:'し', l:'め', r:'め' },
       KeyU: { n:'',   l:'さ', r:'さ' },
@@ -858,16 +858,16 @@ const LAYOUTS = {
       KeyX: { n:'ひ', l:'',   r:''   },
       KeyC: { n:'は', l:'を', r:'を' },
       KeyV: { n:'こ', l:'',   r:''   },
-      KeyB: { n:'そ', l:'む', r:'む' },
+      KeyB: { n:'そ', l:'ぬ', r:'ぬ' },
       KeyN: { n:'た', l:'お', r:'お' },
       KeyM: { n:'な', l:'',   r:''   },
-      Comma:  { n:'ん', l:'ね', r:'ね' },
+      Comma:  { n:'ん', l:'む', r:'む' },
       Period: { n:'ら', l:'わ', r:'わ' },
       Slash:  { n:'れ', l:'',   r:''   },
     },
     homeRow: ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon'],
     tutorial: [
-      { title: '薙刀式 v16とは',
+      { title: '薙刀式 v18とは',
         body: '薙刀式はセンターシフト方式のかな配列です。<br>無変換・変換どちらを押しても同じシフト効果があります。' },
       { title: 'シフト入力',
         body: '<b>シフト</b>：無変換 または 変換 ＋ キー<br><br>濁音・半濁音は<b>2キー同時打鍵</b>で入力します。<br>例：<b>が</b> ＝ F＋J（クロスハンド）<br>　　<b>ぼ</b> ＝ J＋Z<br>　　<b>ぱ</b> ＝ M＋C' },
