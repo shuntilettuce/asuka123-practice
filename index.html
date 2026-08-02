@@ -1911,7 +1911,7 @@ function onKeyDown(e) {
     S.heldKeys.add(code);
     S.heldFingerKeys.clear(); // 親指シフト優先：コンボモード解除
 
-    if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS) {
+    if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS && S.heldKeys.has(S.pendingChar.code)) {
       clearTimeout(S.pendingChar.tid);
       const shift = resolveThumbShift(code);
       evaluate(S.pendingChar.code, shift);
@@ -1927,6 +1927,7 @@ function onKeyDown(e) {
   // ── Regular kana key ───────────────────────────────────────────────────────
   if (!CL.keys[code]) return;
   e.preventDefault();
+  S.heldKeys.add(code);
 
   // Held combo-modifier key (comboMap使用配列: 薙刀式 F/J/B/M、新下駄 D/K/S/L/I/O)
   // 親指シフトが押されている間はスキップ（親指シフト優先）
@@ -1950,8 +1951,12 @@ function onKeyDown(e) {
   }
 
   // Check 2-kana simultaneous combo (voiced sounds in 薙刀式), or flush pending
+  // 「同時押し」は物理的にキーが重なって押されている瞬間があることが条件。
+  // タイミングだけで判定すると、速い連続打鍵（別々の文字を続けて打つ）を
+  // 誤ってコンボと誤判定してしまうため、pendingChar のキーがまだ held されて
+  // いるか（＝本当に重なって押されたか）も必須条件にする。
   if (S.pendingChar && S.pendingChar.code !== code) {
-    if (CL.comboMap && (now - S.pendingChar.time) <= WINDOW_MS) {
+    if (CL.comboMap && (now - S.pendingChar.time) <= WINDOW_MS && S.heldKeys.has(S.pendingChar.code)) {
       const fwd = CL.comboMap[`${S.pendingChar.code}:${code}`];
       const rev = CL.comboMap[`${code}:${S.pendingChar.code}`];
       const voiced = fwd || rev;
