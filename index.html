@@ -833,8 +833,33 @@ const LAYOUTS = {
       'KeyV:KeyP':      'ぺ',  // こ＋へ
       'KeyM:KeyZ':      'ぽ',  // な＋ほ
     },
+    // 小書き（小さい文字）: 小キー（Q）と同時押し。あ/い/う段は無シフトの
+    // ベース文字と組むだけ（2キー）。え/お段はベース自体がシフト文字なので
+    // Sp（シフト）も併せて必要（3キー）。
+    smallVowelKey: 'KeyQ',
+    smallVowelMap: {
+      'KeyJ': 'ぁ', // 小＋あ
+      'KeyK': 'ぃ', // 小＋い
+      'KeyL': 'ぅ', // 小＋う
+    },
+    smallVowelShiftMap: {
+      'KeyO': 'ぇ', // 小＋Sp＋え
+      'KeyN': 'ぉ', // 小＋Sp＋お
+    },
+    // 拗音（清音）: イ段子音キー＋や/ゆ/よ（＋シフト）の同時押しで2文字を1打で出す。
+    // 'code1:code2' → 拗音2文字（順不同でマッチ）
+    youonMap: {
+      'KeyW:KeyH': 'きゃ', 'KeyW:KeyP': 'きゅ', 'KeyW:KeyI': 'きょ',
+      'KeyR:KeyH': 'しゃ', 'KeyR:KeyP': 'しゅ', 'KeyR:KeyI': 'しょ',
+      'KeyG:KeyH': 'ちゃ', 'KeyG:KeyP': 'ちゅ', 'KeyG:KeyI': 'ちょ',
+      'KeyD:KeyH': 'にゃ', 'KeyD:KeyP': 'にゅ', 'KeyD:KeyI': 'にょ',
+      'KeyX:KeyH': 'ひゃ', 'KeyX:KeyP': 'ひゅ', 'KeyX:KeyI': 'ひょ',
+      'KeyS:KeyH': 'みゃ', 'KeyS:KeyP': 'みゅ', 'KeyS:KeyI': 'みょ',
+      'KeyE:KeyH': 'りゃ', 'KeyE:KeyP': 'りゅ', 'KeyE:KeyI': 'りょ',
+    },
     keys: {
-      // Upper row (Q, T, Y, BracketLeft, Quote: unassigned)
+      // Upper row (T, Y, BracketLeft, Quote: unassigned)
+      KeyQ: { n:'小', l:'', r:'' }, // 小書き専用モディファイア（かなではない）
       KeyW: { n:'き', l:'ね', r:'ね' },
       KeyE: { n:'て', l:'り', r:'り' },
       KeyR: { n:'し', l:'め', r:'め' },
@@ -1024,6 +1049,26 @@ function buildKanaMap() {
       const mainCode  = combo.slice(idx + 1);
       KANA_MAP[kana] = { code: mainCode, s: 'combo', comboCode };
       COMBO_MODS.add(comboCode);
+    }
+  }
+  // 小書き（小さい文字）: 小キー(smallVowelKey) + ベースキー（＋シフト）
+  if (CL.smallVowelMap) {
+    for (const [code, kana] of Object.entries(CL.smallVowelMap)) {
+      KANA_MAP[kana] = { code, s: 'smallvowel', needsShift: false };
+    }
+  }
+  if (CL.smallVowelShiftMap) {
+    for (const [code, kana] of Object.entries(CL.smallVowelShiftMap)) {
+      KANA_MAP[kana] = { code, s: 'smallvowel', needsShift: true };
+    }
+  }
+  // 拗音（清音）: 2つのかなキー（＋シフト）を同時押しして2文字を1打で出す
+  if (CL.youonMap) {
+    for (const [combo, kana] of Object.entries(CL.youonMap)) {
+      const idx = combo.indexOf(':');
+      const code1 = combo.slice(0, idx);
+      const code2 = combo.slice(idx + 1);
+      KANA_MAP[kana] = { code1, code2, s: 'youon' };
     }
   }
 }
@@ -1292,6 +1337,7 @@ const S = {
   heldFingerKeys: new Set(),
   pendingChar:  null,
   pendingThumb: null,
+  pendingYouon: null,
 
   tStart: 0, firstKey: false, hadWrong: false,
   stats: { total:0, correct:0, msSum:0, errs:{}, t0:0 },
@@ -1519,6 +1565,28 @@ function renderKB() {
     return;
   }
 
+  if (S.tgtKey.s === 'youon') {
+    // 拗音: 2つのかなキー＋シフトをハイライト
+    KEL[S.tgtKey.code1]?.classList.add('tgt', 'm-n');
+    KEL[S.tgtKey.code2]?.classList.add('tgt', 'm-n');
+    KEL['NonConvert']?.classList.add('hl-left');
+    indL.classList.add('lit-left', 'req');
+    if (isCenter) { KEL['Convert']?.classList.add('hl-right'); indR.classList.add('lit-right', 'req'); }
+    return;
+  }
+
+  if (S.tgtKey.s === 'smallvowel') {
+    // 小書き: 小キー＋ベースキー（＋必要ならシフト）をハイライト
+    KEL[CL.smallVowelKey]?.classList.add('tgt', 'm-n');
+    KEL[S.tgtKey.code]?.classList.add('tgt', 'm-n');
+    if (S.tgtKey.needsShift) {
+      KEL['NonConvert']?.classList.add('hl-left');
+      indL.classList.add('lit-left', 'req');
+      if (isCenter) { KEL['Convert']?.classList.add('hl-right'); indR.classList.add('lit-right', 'req'); }
+    }
+    return;
+  }
+
   const tgtEl = KEL[S.tgtKey.code];
   if (tgtEl) {
     tgtEl.classList.add('tgt',
@@ -1572,6 +1640,23 @@ function buildQueue(chars, size) {
   return q;
 }
 
+// 文章を「かな単位」に分割する。拗音（きゃ等）のような2文字1打の組み合わせが
+// KANA_MAP にあれば2文字まとめて1ユニットとして扱い、なければ1文字ずつ。
+function tokenizeKana(text) {
+  const chars = [...text];
+  const units = [];
+  for (let i = 0; i < chars.length; i++) {
+    const two = chars[i] + (chars[i + 1] || '');
+    if (chars[i + 1] && KANA_MAP[two]) {
+      units.push(two);
+      i++;
+    } else {
+      units.push(chars[i]);
+    }
+  }
+  return units;
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 function startLesson(idx) {
   const lesson = LESSONS[idx];
@@ -1610,7 +1695,7 @@ function startTextGroup(groupIdx) {
   while (taken < S.textSize) {
     if (!roundBuf.length) roundBuf = shuffle([...pool]);
     const txt = roundBuf.shift();
-    const filtered = [...txt.text].filter(c => KANA_MAP[c]);
+    const filtered = tokenizeKana(txt.text).filter(c => KANA_MAP[c]);
     if (!filtered.length) continue;
     const startInQueue = queue.length;
     queue.push(...filtered);
@@ -1680,7 +1765,7 @@ function updateTextCtx() {
   const localPos = S.pos - seg.startInQueue;
   let html = `<div style="font-size:0.68rem;color:var(--text-dim);margin-bottom:3px">${seg.title}</div>`;
   let fi = 0;
-  for (const c of seg.text) {
+  for (const c of tokenizeKana(seg.text)) {
     if (!KANA_MAP[c]) {
       // 入力対象外の文字: カーソルが通過済みなら薄色、未到達なら通常色
       html += localPos >= fi
@@ -1719,6 +1804,22 @@ function updateHint() {
     const lbl1 = PHYS[tk.comboCode] || tk.comboCode;
     const lbl2 = PHYS[tk.code] || tk.code;
     el.innerHTML = `<span class="hk">${lbl1}</span> ＋ <span class="hk">${lbl2}</span> <span style="font-size:0.78rem">（同時）</span>`;
+    return;
+  }
+
+  if (tk.s === 'youon') {
+    const lbl1 = PHYS[tk.code1] || tk.code1;
+    const lbl2 = PHYS[tk.code2] || tk.code2;
+    el.innerHTML = `<span class="hk">シフト</span> ＋ <span class="hk">${lbl1}</span> ＋ <span class="hk">${lbl2}</span> <span style="font-size:0.78rem">（同時）</span>`;
+    return;
+  }
+
+  if (tk.s === 'smallvowel') {
+    const lblQ = PHYS[CL.smallVowelKey] || CL.smallVowelKey;
+    const lbl2 = PHYS[tk.code] || tk.code;
+    el.innerHTML = tk.needsShift
+      ? `<span class="hk">小</span> ＋ <span class="hk">シフト</span> ＋ <span class="hk">${lbl2}</span> <span style="font-size:0.78rem">（同時）</span>`
+      : `<span class="hk">小</span> ＋ <span class="hk">${lbl2}</span> <span style="font-size:0.78rem">（同時）</span>`;
     return;
   }
 
@@ -1794,6 +1895,72 @@ function evaluate(code, shift, comboCode) {
     flashKey(code, false);
     commitFail();
   }
+}
+
+// 拗音・小書き（シフト付き）など、複数キーが「そろって held されている」ことで
+// 確定する多キーコンボの評価。resultKana が現在のターゲットと一致するかを見る。
+function evaluateExtra(resultKana) {
+  if (!S.tgtKey) return;
+  const now = performance.now();
+  if (!S.firstKey) { S.firstKey = true; S.tStart = now; }
+  if (resultKana === S.tgtKana) {
+    commitSuccess(now - S.tStart);
+  } else {
+    commitFail();
+  }
+}
+
+// 単一キー（+シフト）で完結する評価か、現在のターゲットが拗音／小書き
+// （シフト付き）のような複数キー同時押しへ拡張されうる評価かを判定する。
+// 拡張されうる場合は即座に不正解にせず、残りのキーが揃うまで少し待つ。
+function resolveKeyPress(code, shift, retriesLeft) {
+  if (retriesLeft === undefined) retriesLeft = 1;
+  if (!S.heldKeys.has(code)) return; // キーが既に離されていれば何もしない（古いリトライ対策）
+  const tk = S.tgtKey;
+
+  if (tk && tk.s === 'youon' && (code === tk.code1 || code === tk.code2)) {
+    const spHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+    if (spHeld && S.heldKeys.has(tk.code1) && S.heldKeys.has(tk.code2)) {
+      flashKey(tk.code1, true); flashKey(tk.code2, true);
+      evaluateExtra(S.tgtKana);
+      return;
+    }
+    if (retriesLeft > 0) {
+      setTimeout(() => resolveKeyPress(code, shift, retriesLeft - 1), WINDOW_MS);
+      return;
+    }
+  }
+
+  if (tk && tk.s === 'smallvowel' && tk.needsShift && code === tk.code) {
+    const spHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+    const qHeld = CL.smallVowelKey && S.heldKeys.has(CL.smallVowelKey);
+    if (spHeld && qHeld) {
+      flashKey(CL.smallVowelKey, true); flashKey(tk.code, true);
+      evaluateExtra(S.tgtKana);
+      return;
+    }
+    if (retriesLeft > 0) {
+      setTimeout(() => resolveKeyPress(code, shift, retriesLeft - 1), WINDOW_MS);
+      return;
+    }
+  }
+
+  evaluate(code, shift);
+}
+
+// 拗音の2つのかなキーは既に重なって押されているが、Sp（シフト）がまだ来て
+// いない場合（子音→拗音キー→シフトの順）に、Spキーのkeydownイベントで即座に
+// 確定できるよう S.pendingYouon に記録しておく。タイムアウトしたら、あるいは
+// どちらかのキーが先に離されたら諦めて最初のキーをplain確定する。
+function waitForYouonShift(code1, code2, result) {
+  if (S.pendingYouon) clearTimeout(S.pendingYouon.tid);
+  S.pendingYouon = {
+    code1, code2, result,
+    tid: setTimeout(() => {
+      S.pendingYouon = null;
+      if (S.heldKeys.has(code1)) evaluate(code1, 'n');
+    }, WINDOW_MS),
+  };
 }
 
 // 促音「っ」は l 接頭（ltu）の単独入力に加え、直後のかなの子音を二重化する入力
@@ -1880,6 +2047,7 @@ function endSession() {
 // ── Input handling ────────────────────────────────────────────────────────────
 function clearPending() {
   if (S.pendingChar) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+  if (S.pendingYouon) { clearTimeout(S.pendingYouon.tid); S.pendingYouon = null; }
   S.pendingThumb = null;
   S.heldFingerKeys.clear();
 }
@@ -1911,10 +2079,21 @@ function onKeyDown(e) {
     S.heldKeys.add(code);
     S.heldFingerKeys.clear(); // 親指シフト優先：コンボモード解除
 
+    // 拗音の2キーが既に押さえられた状態でSpが来た（子音→拗音キー→シフトの順）
+    if (S.pendingYouon && S.heldKeys.has(S.pendingYouon.code1) && S.heldKeys.has(S.pendingYouon.code2)) {
+      clearTimeout(S.pendingYouon.tid);
+      const { code1, code2, result } = S.pendingYouon;
+      S.pendingYouon = null;
+      flashKey(code1, true); flashKey(code2, true);
+      evaluateExtra(result);
+      renderKB();
+      return;
+    }
+
     if (S.pendingChar && (now - S.pendingChar.time) <= WINDOW_MS && S.heldKeys.has(S.pendingChar.code)) {
       clearTimeout(S.pendingChar.tid);
       const shift = resolveThumbShift(code);
-      evaluate(S.pendingChar.code, shift);
+      resolveKeyPress(S.pendingChar.code, shift);
       S.pendingChar = null;
     } else {
       S.pendingThumb = { code, time: now };
@@ -1924,10 +2103,55 @@ function onKeyDown(e) {
     return;
   }
 
+  // ── 小キー（小書き専用モディファイア: 薙刀式のQ） ──────────────────────────
+  if (CL.smallVowelKey && code === CL.smallVowelKey) {
+    e.preventDefault();
+    S.heldKeys.add(code);
+    const spHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+    for (const heldCode of S.heldKeys) {
+      if (heldCode === code || heldCode === 'NonConvert' || heldCode === 'Convert') continue;
+      const kana = (CL.smallVowelMap && CL.smallVowelMap[heldCode]) ||
+                   (spHeld && CL.smallVowelShiftMap && CL.smallVowelShiftMap[heldCode]);
+      if (kana) {
+        if (S.pendingChar?.code === heldCode) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+        flashKey(code, true); flashKey(heldCode, true);
+        evaluateExtra(kana);
+        return;
+      }
+    }
+    renderKB();
+    return;
+  }
+
   // ── Regular kana key ───────────────────────────────────────────────────────
   if (!CL.keys[code]) return;
   e.preventDefault();
   S.heldKeys.add(code);
+
+  // ── 小書き: 小キーが既に held なら即確定（え/お段はSpも必要） ─────────────────
+  if (CL.smallVowelKey && S.heldKeys.has(CL.smallVowelKey)) {
+    const spHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+    const kana = (CL.smallVowelMap && CL.smallVowelMap[code]) ||
+                 (spHeld && CL.smallVowelShiftMap && CL.smallVowelShiftMap[code]);
+    if (kana) {
+      flashKey(CL.smallVowelKey, true); flashKey(code, true);
+      evaluateExtra(kana);
+      return;
+    }
+  }
+  // ── 拗音: もう一方のキーが既に held、かつSpも held なら即確定 ────────────────
+  if (CL.youonMap && (S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert'))) {
+    for (const heldCode of S.heldKeys) {
+      if (heldCode === code || heldCode === 'NonConvert' || heldCode === 'Convert') continue;
+      const result = CL.youonMap[`${heldCode}:${code}`] || CL.youonMap[`${code}:${heldCode}`];
+      if (result) {
+        if (S.pendingChar?.code === heldCode) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+        flashKey(heldCode, true); flashKey(code, true);
+        evaluateExtra(result);
+        return;
+      }
+    }
+  }
 
   // Held combo-modifier key (comboMap使用配列: 薙刀式 F/J/B/M、新下駄 D/K/S/L/I/O)
   // 親指シフトが押されている間はスキップ（親指シフト優先）
@@ -1969,6 +2193,18 @@ function onKeyDown(e) {
         return;
       }
     }
+    // 拗音の2キー目が来たが、まだSp（シフト）が held でない場合（子音→拗音キー→
+    // シフトの順で押した場合）: すぐplain確定せず、Spが少し遅れて来るのを待つ。
+    if (CL.youonMap && S.heldKeys.has(S.pendingChar.code)) {
+      const result = CL.youonMap[`${S.pendingChar.code}:${code}`] || CL.youonMap[`${code}:${S.pendingChar.code}`];
+      if (result) {
+        clearTimeout(S.pendingChar.tid);
+        const code1 = S.pendingChar.code;
+        S.pendingChar = null;
+        waitForYouonShift(code1, code, result);
+        return;
+      }
+    }
     clearTimeout(S.pendingChar.tid);
     evaluate(S.pendingChar.code, 'n');
     S.pendingChar = null;
@@ -1976,16 +2212,16 @@ function onKeyDown(e) {
 
   // Thumb held down (long press)
   if (S.heldKeys.has('Convert')) {
-    evaluate(code, resolveThumbShift('Convert')); return;
+    resolveKeyPress(code, resolveThumbShift('Convert')); return;
   }
   if (S.heldKeys.has('NonConvert')) {
-    evaluate(code, resolveThumbShift('NonConvert')); return;
+    resolveKeyPress(code, resolveThumbShift('NonConvert')); return;
   }
 
   // Pending thumb (thumb came first, within window)
   if (S.pendingThumb && (now - S.pendingThumb.time) <= WINDOW_MS) {
     const shift = resolveThumbShift(S.pendingThumb.code);
-    evaluate(code, shift);
+    resolveKeyPress(code, shift);
     S.pendingThumb = null;
     return;
   }
@@ -2008,6 +2244,10 @@ function resolveThumbShift(thumbCode) {
 function onKeyUp(e) {
   S.heldKeys.delete(e.code);
   S.heldFingerKeys.delete(e.code);
+  if (S.pendingYouon && (e.code === S.pendingYouon.code1 || e.code === S.pendingYouon.code2)) {
+    clearTimeout(S.pendingYouon.tid);
+    S.pendingYouon = null;
+  }
   if (e.code === 'NonConvert' || e.code === 'Convert') {
     if (CL.thumbMode === 'finger') { e.preventDefault(); return; }
     e.preventDefault();
