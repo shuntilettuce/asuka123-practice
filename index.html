@@ -1017,6 +1017,20 @@ function isKana(c) {
          cp === 0x30FC;
 }
 
+// ひらがな用の打鍵定義から対応するカタカナのエントリも複製する。実際の配列や
+// IMEでも「かなを打つ」動作自体はひらがな/カタカナで変わらず、文字種の違いは
+// 変換後に決まるだけなので、練習上は同じキー操作を割り当てれば十分。
+function addKatakanaAliases() {
+  const toKatakana = (s) => [...s].map(c => {
+    const cp = c.codePointAt(0);
+    return (cp >= 0x3041 && cp <= 0x3096) ? String.fromCodePoint(cp + 0x60) : c;
+  }).join('');
+  for (const [kana, info] of Object.entries(KANA_MAP)) {
+    const kata = toKatakana(kana);
+    if (kata !== kana && !KANA_MAP[kata]) KANA_MAP[kata] = info;
+  }
+}
+
 function buildKanaMap() {
   KANA_MAP = {};
   COMBO_MODS = new Set();
@@ -1027,6 +1041,7 @@ function buildKanaMap() {
     for (const [kana, romaji] of Object.entries(ROMAJI_TABLE)) {
       KANA_MAP[kana] = { seq: romaji.split(''), s: 'romaji' };
     }
+    addKatakanaAliases();
     return;
   }
 
@@ -1071,6 +1086,7 @@ function buildKanaMap() {
       KANA_MAP[kana] = { code1, code2, s: 'youon' };
     }
   }
+  addKatakanaAliases();
 }
 
 const ROMAJI_SEION = [...'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるろわをん'];
@@ -2139,17 +2155,18 @@ function onKeyDown(e) {
       return;
     }
   }
-  // ── 拗音: もう一方のキーが既に held、かつSpも held なら即確定 ────────────────
-  if (CL.youonMap && (S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert'))) {
-    for (const heldCode of S.heldKeys) {
-      if (heldCode === code || heldCode === 'NonConvert' || heldCode === 'Convert') continue;
-      const result = CL.youonMap[`${heldCode}:${code}`] || CL.youonMap[`${code}:${heldCode}`];
-      if (result) {
-        if (S.pendingChar?.code === heldCode) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
-        flashKey(heldCode, true); flashKey(code, true);
-        evaluateExtra(result);
-        return;
-      }
+  // ── 拗音: 現在のターゲットが拗音で、必要な相方キー＋Spが揃っていれば即確定 ──
+  // ターゲットを見ずにキーの組み合わせだけで判定すると、拗音と無関係な高速
+  // 連続打鍵まで誤って「拗音候補」として待たされ、速く打てなくなってしまう。
+  if (CL.youonMap && S.tgtKey && S.tgtKey.s === 'youon' &&
+      (code === S.tgtKey.code1 || code === S.tgtKey.code2)) {
+    const other = code === S.tgtKey.code1 ? S.tgtKey.code2 : S.tgtKey.code1;
+    const spHeld = S.heldKeys.has('NonConvert') || S.heldKeys.has('Convert');
+    if (spHeld && S.heldKeys.has(other)) {
+      if (S.pendingChar?.code === other) { clearTimeout(S.pendingChar.tid); S.pendingChar = null; }
+      flashKey(other, true); flashKey(code, true);
+      evaluateExtra(S.tgtKana);
+      return;
     }
   }
 
@@ -2195,15 +2212,15 @@ function onKeyDown(e) {
     }
     // 拗音の2キー目が来たが、まだSp（シフト）が held でない場合（子音→拗音キー→
     // シフトの順で押した場合）: すぐplain確定せず、Spが少し遅れて来るのを待つ。
-    if (CL.youonMap && S.heldKeys.has(S.pendingChar.code)) {
-      const result = CL.youonMap[`${S.pendingChar.code}:${code}`] || CL.youonMap[`${code}:${S.pendingChar.code}`];
-      if (result) {
-        clearTimeout(S.pendingChar.tid);
-        const code1 = S.pendingChar.code;
-        S.pendingChar = null;
-        waitForYouonShift(code1, code, result);
-        return;
-      }
+    // ターゲットが実際に拗音の場合に限定し、無関係な高速連続打鍵を待たせない。
+    if (CL.youonMap && S.tgtKey && S.tgtKey.s === 'youon' && S.heldKeys.has(S.pendingChar.code) &&
+        ((S.pendingChar.code === S.tgtKey.code1 && code === S.tgtKey.code2) ||
+         (S.pendingChar.code === S.tgtKey.code2 && code === S.tgtKey.code1))) {
+      clearTimeout(S.pendingChar.tid);
+      const code1 = S.pendingChar.code;
+      S.pendingChar = null;
+      waitForYouonShift(code1, code, S.tgtKana);
+      return;
     }
     clearTimeout(S.pendingChar.tid);
     evaluate(S.pendingChar.code, 'n');
