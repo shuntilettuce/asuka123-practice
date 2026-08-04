@@ -532,6 +532,7 @@
     <button class="layout-btn" data-lid="naginata" onclick="switchLayout('naginata')">薙刀式 v18</button>
     <button class="layout-btn" data-lid="shingeta" onclick="switchLayout('shingeta')">新下駄配列</button>
     <button class="layout-btn" data-lid="onishi"   onclick="switchLayout('onishi')">大西配列</button>
+    <button class="layout-btn" data-lid="qwerty"   onclick="switchLayout('qwerty')">QWERTYローマ字</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
     <p class="layout-desc" id="layout-desc" style="margin:0;flex:1"></p>
@@ -659,7 +660,7 @@
 
 const PHYS = {
   KeyQ:'Q', KeyW:'W', KeyE:'E', KeyR:'R', KeyT:'T',
-  KeyY:'Y', KeyU:'U', KeyI:'I', KeyO:'O', KeyP:'P', BracketLeft:'[',
+  KeyY:'Y', KeyU:'U', KeyI:'I', KeyO:'O', KeyP:'P', BracketLeft:'[', Minus:'-',
   KeyA:'A', KeyS:'S', KeyD:'D', KeyF:'F', KeyG:'G',
   KeyH:'H', KeyJ:'J', KeyK:'K', KeyL:'L', Semicolon:';', Quote:"'",
   KeyZ:'Z', KeyX:'X', KeyC:'C', KeyV:'V', KeyB:'B',
@@ -998,6 +999,27 @@ const LAYOUTS = {
         body: '各かな文字を<b>ローマ字（1〜3打鍵）</b>で入力します。<br>例：「た」＝ J→A の位置（t の後 a）<br>促音「っ」は <span class="hk">LTU</span>、小さい文字（ゃゅょ等）は <span class="hk">L</span> を頭につけて入力します。' },
       { title: '練習のコツ',
         body: 'このアプリの他配列と同じ画面で練習できますが、判定は<b>1キーずつのローマ字連続入力</b>です。<br>最初は清音（あ〜わ行）から。慣れたら濁音・拗音・促音を含む全かなに挑戦しましょう。' },
+    ],
+  },
+
+  // ── QWERTYローマ字（一般的なローマ字入力） ──────────────────────────────
+  qwerty: {
+    name: 'QWERTYローマ字',
+    desc: '一般的なローマ字入力方式。アルファベットの配置はそのままQWERTY通り',
+    credit: '標準ローマ字入力方式（JIS/US配列共通）',
+    inputMode: 'romaji',
+    romajiKeys: {
+      KeyQ:'q', KeyW:'w', KeyE:'e', KeyR:'r', KeyT:'t', KeyY:'y', KeyU:'u', KeyI:'i', KeyO:'o', KeyP:'p', Minus:'-',
+      KeyA:'a', KeyS:'s', KeyD:'d', KeyF:'f', KeyG:'g', KeyH:'h', KeyJ:'j', KeyK:'k', KeyL:'l',
+      KeyZ:'z', KeyX:'x', KeyC:'c', KeyV:'v', KeyB:'b', KeyN:'n', KeyM:'m',
+    },
+    tutorial: [
+      { title: 'QWERTYローマ字とは',
+        body: '最も一般的なローマ字入力方式です。<br>キーの配置はアルファベット通りで、パソコンのローマ字入力設定と同じ感覚で練習できます。' },
+      { title: '入力方法',
+        body: '各かな文字をローマ字（1〜3打鍵）で入力します。<br>例：「た」＝ T→A<br>促音「っ」は次の子音を二重にする（例：「った」＝TTA）か、<span class="hk">LTU</span> でも入力できます。<br>小さい文字（ゃゅょ等）は <span class="hk">L</span> を頭につけます。' },
+      { title: '練習のコツ',
+        body: '普段パソコンで日本語入力しているのと同じ配列なので、指の動きをそのまま実践練習に活かせます。<br>まずは清音から、慣れたら濁音・拗音・促音を含む全かなに挑戦しましょう。' },
     ],
   },
 };
@@ -1396,7 +1418,7 @@ function playSound(ok) {
 
 // ── Keyboard DOM ──────────────────────────────────────────────────────────────
 const KB_ROWS = [
-  ['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP','BracketLeft'],
+  ['KeyQ','KeyW','KeyE','KeyR','KeyT','KeyY','KeyU','KeyI','KeyO','KeyP','BracketLeft','Minus'],
   ['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'],
   ['KeyZ','KeyX','KeyC','KeyV','KeyB','KeyN','KeyM','Comma','Period','Slash'],
 ];
