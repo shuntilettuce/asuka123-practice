@@ -89,6 +89,7 @@
     .size-row {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 18px;
       font-size: 0.88rem;
@@ -560,6 +561,8 @@
       <button onclick="setTextSize(5)">5</button>
       <button onclick="setTextSize(10)">10</button>
       <button onclick="setTextSize(20)">20</button>
+      <button onclick="setTextSize(50)">50</button>
+      <button onclick="setTextSize(100)">100</button>
     </div>
     <div class="text-grid" id="text-grid"></div>
   </div>
@@ -612,7 +615,7 @@
     正解率: <b id="s-acc">－</b>&ensp;速度: <b id="s-cpm">－</b> CPM
   </div>
   <div class="ctrl-row">
-    <button class="btn" onclick="toggleHint()">ヒント: <span id="hint-lbl">ON</span></button>
+    <button class="btn" onclick="toggleHint()" title="無操作3秒でヒント表示（Tabキーでも切替可）">ヒント: <span id="hint-lbl">ON</span></button>
     <button class="btn" id="sound-btn" onclick="toggleSound()">音: <span id="sound-lbl">ON</span></button>
     <button class="btn" onclick="goMenu()">メニューへ</button>
   </div>
@@ -648,7 +651,7 @@
     <canvas id="cpm-chart" width="720" height="150"></canvas>
   </div>
   <div class="ctrl-row">
-    <button class="btn primary" onclick="replayLesson()">もう一度</button>
+    <button class="btn primary" onclick="replayLesson()" title="Enterキーでも続けられます">もう一度（Enter）</button>
     <button class="btn" onclick="goMenu()">メニューへ</button>
   </div>
 </div>
@@ -1366,6 +1369,8 @@ const S = {
   textSize: 5,
   textSegs: [],
   showHint: true,
+  hintRevealed: false,
+  hintTimer: null,
   soundOn: true,
 
   queue: [], pos: 0,
@@ -1382,6 +1387,27 @@ const S = {
 };
 
 const WINDOW_MS = 50;
+const HINT_DELAY_MS = 3000; // ヒント: 何も打鍵しない状態がこの時間続いたら表示する
+
+// ヒントの遅延表示タイマーを立て直す。何か打鍵がある度に呼び、無操作が
+// HINT_DELAY_MS続いたら初めてヒントを表示する（常時表示だと考えずに
+// 打ってしまい、練習にならないため）。
+function scheduleHintReveal() {
+  if (S.hintTimer) clearTimeout(S.hintTimer);
+  S.hintTimer = null;
+  if (!S.showHint || S.hintRevealed) return;
+  S.hintTimer = setTimeout(() => {
+    S.hintTimer = null;
+    if (!S.showHint || S.hintRevealed) return;
+    S.hintRevealed = true;
+    updateHint();
+    renderKB();
+  }, HINT_DELAY_MS);
+}
+
+function clearHintTimer() {
+  if (S.hintTimer) { clearTimeout(S.hintTimer); S.hintTimer = null; }
+}
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
 let _ac = null;
@@ -1560,7 +1586,7 @@ function renderKB() {
   for (const el of Object.values(KEL)) el.classList.remove(...TGT_CLS);
 
   if (CL.inputMode === 'romaji') {
-    if (S.tgtKey && S.showHint) {
+    if (S.tgtKey && S.hintRevealed) {
       const letter = S.tgtKey.seq[S.romajiPos];
       const tgtEl = KEL[ROMAJI_REV[letter]];
       if (tgtEl) tgtEl.classList.add('tgt', 'm-n');
@@ -1594,7 +1620,7 @@ function renderKB() {
     indR.classList.toggle('lit-right', rHeld);
   }
 
-  if (!S.tgtKey || !S.showHint) return;
+  if (!S.tgtKey || !S.hintRevealed) return;
 
   if (S.tgtKey.s === 'combo') {
     // Highlight both combo modifier key and main key
@@ -1772,6 +1798,8 @@ function nextChallenge() {
   S.hadWrong = false;
   S.tStart   = 0;
   S.romajiPos = 0;
+  S.hintRevealed = false;
+  scheduleHintReveal();
 
   const n = S.queue.length;
   if (S.mode === 'text') {
@@ -1821,7 +1849,7 @@ function updateTextCtx() {
 
 function updateHint() {
   const el = document.getElementById('hint');
-  if (!S.showHint || !S.tgtKey) { el.innerHTML = ''; return; }
+  if (!S.hintRevealed || !S.tgtKey) { el.innerHTML = ''; return; }
 
   const tk = S.tgtKey;
 
@@ -2050,6 +2078,7 @@ function evaluateRomaji(code) {
 }
 
 function endSession() {
+  clearHintTimer();
   const { total, correct, msSum, errs } = S.stats;
   const acc = total ? Math.round(correct/total*100) : 0;
   const cpm = msSum > 0 ? Math.round(correct/msSum*60000) : 0;
@@ -2091,15 +2120,31 @@ function clearPending() {
 }
 
 function onKeyDown(e) {
+  if (S.screen === 'stats' && (e.code === 'Enter' || e.code === 'NumpadEnter')) {
+    e.preventDefault();
+    replayLesson();
+    return;
+  }
+
   if (S.screen !== 'practice') return;
   if (e.repeat) return;
+
+  const code = e.code;
+
+  // ── ヒントON/OFFショートカット（Tabキー） ──────────────────────────────────
+  if (code === 'Tab') {
+    e.preventDefault();
+    toggleHint();
+    return;
+  }
 
   if (e.isComposing) {
     document.getElementById('ime-warn').style.display = 'block';
     return;
   }
 
-  const code = e.code;
+  scheduleHintReveal(); // 何か打鍵があったのでヒント表示タイマーをリセット
+
   const now  = performance.now();
 
   // ── ローマ字連続入力レイアウト（大西配列）: シフト判定なし ─────────────────
@@ -2429,6 +2474,12 @@ function replayLesson() {
 function toggleHint() {
   S.showHint = !S.showHint;
   document.getElementById('hint-lbl').textContent = S.showHint ? 'ON' : 'OFF';
+  if (S.showHint) {
+    scheduleHintReveal();
+  } else {
+    clearHintTimer();
+    S.hintRevealed = false;
+  }
   updateHint();
   renderKB();
 }
